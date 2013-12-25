@@ -18,7 +18,6 @@ LOCAL_SRC_FILES:= \
     pong.c \
     progressdots.c \
     multirom_ui_themes.c \
-    themes/multirom_ui_landscape.c \
     themes/multirom_ui_portrait.c \
     fstab.c \
     workers.c
