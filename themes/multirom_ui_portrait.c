@@ -155,36 +155,31 @@ static void tab_misc_init(multirom_theme_data *t, tab_data_misc *d, int color_sc
 
     y += MISCBTN_H+70*DPI_MUL;
 
-    static const char *texts[] =
-    {
-        "Reboot",               // 0
-        "Reboot to recovery",   // 1
-        "Reboot to bootloader", // 2
-        "Shutdown",             // 3
-        NULL
-    };
-
-    static const int exit_codes[] = {
-        UI_EXIT_REBOOT, UI_EXIT_REBOOT_RECOVERY,
-        UI_EXIT_REBOOT_BOOTLOADER, UI_EXIT_SHUTDOWN
+    static const struct {
+        const int exit_code;
+        const char *text;
+    } cmds[] = {
+        { UI_EXIT_REBOOT, "Reboot" },
+        { UI_EXIT_REBOOT_RECOVERY, "Recovery" },
+        { UI_EXIT_REBOOT_BOOTLOADER, "Bootloader" },
+        { UI_EXIT_SHUTDOWN, "Power Off" },
+        { 0, NULL },
     };
 
     int i;
-    for(i = 0; texts[i]; ++i)
+    for(i = 0; cmds[i].text; ++i)
     {
         b = mzalloc(sizeof(button));
         b->x = x;
         b->y = y;
         b->w = MISCBTN_W;
         b->h = MISCBTN_H;
-        b->action = exit_codes[i];
+        b->action = cmds[i].exit_code;
         b->clicked = &multirom_ui_reboot_btn;
-        button_init_ui(b, texts[i], SIZE_BIG);
+        button_init_ui(b, cmds[i].text, SIZE_BIG);
         list_add(b, &d->buttons);
 
         y += MISCBTN_H+20*DPI_MUL;
-        if(i == 2)
-            y += 50*DPI_MUL;
     }
 
     fb_text *text = fb_add_text(0, fb_height-16*SIZE_SMALL, WHITE, SIZE_SMALL, "MultiROM v%d"VERSION_DEV_FIX" with trampoline v%d.",
