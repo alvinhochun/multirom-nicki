@@ -42,29 +42,7 @@
 // Not defined in android includes?
 #define MS_RELATIME (1<<21)
 
-static char path_multirom[64] = { 0 };
-
-static int find_multirom(void)
-{
-    int i;
-    struct stat info;
-
-    static const char *paths[] = {
-        REALDATA"/media/0/multirom", // 4.2
-        REALDATA"/media/multirom",
-        NULL,
-    };
-
-    for(i = 0; paths[i]; ++i)
-    {
-        if(stat(paths[i], &info) < 0)
-            continue;
-
-        strcpy(path_multirom, paths[i]);
-        return 0;
-    }
-    return -1;
-}
+static char path_multirom[] = "/multirom";
 
 static int run_multirom_bin(char *path)
 {

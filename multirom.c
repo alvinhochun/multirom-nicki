@@ -56,46 +56,16 @@
 
 #define T_FOLDER 4
 
-static char busybox_path[64] = { 0 };
-static char multirom_dir[64] = { 0 };
-static char kexec_path[64] = { 0 };
-static char ntfs_path[64] = { 0 };
-static char exfat_path[64] = { 0 };
+static char busybox_path[] = "/multirom/"BUSYBOX_BIN;
+static char multirom_dir[] = "/multirom";
+static char kexec_path[] = "/multirom/"KEXEC_BIN;
+static char ntfs_path[] = "/multirom/"NTFS_BIN;
+static char exfat_path[] = "/multirom/"EXFAT_BIN;
 
 static volatile int run_usb_refresh = 0;
 static pthread_t usb_refresh_thread;
 static pthread_mutex_t parts_mutex = PTHREAD_MUTEX_INITIALIZER;
 static void (*usb_refresh_handler)(void) = NULL;
-
-int multirom_find_base_dir(void)
-{
-    int i;
-    struct stat info;
-
-    static const char *paths[] = {
-        REALDATA"/media/0/multirom", // 4.2
-        REALDATA"/media/multirom",
-        NULL,
-    };
-
-    for(i = 0; paths[i]; ++i)
-    {
-        if(stat(paths[i], &info) < 0)
-            continue;
-
-        strcpy(multirom_dir, paths[i]);
-        sprintf(busybox_path, "%s/%s", paths[i], BUSYBOX_BIN);
-        sprintf(kexec_path, "%s/%s", paths[i], KEXEC_BIN);
-        sprintf(ntfs_path, "%s/%s", paths[i], NTFS_BIN);
-        sprintf(exfat_path, "%s/%s", paths[i], EXFAT_BIN);
-
-        chmod(kexec_path, 0755);
-        chmod(ntfs_path, 0755);
-        chmod(exfat_path, 0755);
-        return 0;
-    }
-    return -1;
-}
 
 int multirom(void)
 {

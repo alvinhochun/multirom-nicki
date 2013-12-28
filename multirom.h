@@ -104,7 +104,6 @@ struct multirom_status
 };
 
 int multirom(void);
-int multirom_find_base_dir(void);
 void multirom_emergency_reboot(void);
 int multirom_default_status(struct multirom_status *s);
 void multirom_find_usb_roms(struct multirom_status *s);
