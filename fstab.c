@@ -248,45 +248,10 @@ void fstab_parse_options(char *opt, struct fstab_part *part)
 
 struct fstab *fstab_auto_load(void)
 {
-    char path[64];
+    char path[] = "/multirom/fstab";
     path[0] = 0;
 
-    if(access("/mrom.fstab", F_OK) >= 0)
-        strcpy(path, "/mrom.fstab");
-    else
-    {
-        DIR *d = opendir("/");
-        if(!d)
-        {
-            ERROR("Failed to open /\n");
-            return NULL;
-        }
-
-        struct dirent *dt;
-        while((dt = readdir(d)))
-        {
-            if(dt->d_type != DT_REG)
-                continue;
-
-            // For some reason, CM includes goldfish's fstab, ignore it
-            // (goldfish is the virtual device for emulator)
-            if(strcmp(dt->d_name, "fstab.goldfish") == 0)
-                continue;
-
-            if(strncmp(dt->d_name, "fstab.", sizeof("fstab.")-1) == 0)
-            {
-                strcpy(path, "/");
-                strcat(path, dt->d_name);
-
-                // try to find specifically fstab.device
-                if(strcmp(dt->d_name, "fstab."TARGET_DEVICE) == 0)
-                    break;
-            }
-        }
-        closedir(d);
-    }
-
-    if(path[0] == 0)
+    if(access(path, F_OK) < 0)
     {
         ERROR("Failed to find fstab!\n");
         return NULL;
