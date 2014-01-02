@@ -43,25 +43,25 @@ void multirom_emergency_reboot_recovery(void)
         fb_add_text(0, 0, WHITE, SIZE_NORMAL,
             "An error occured.\n"
             "Stopping MultiROM!\n"
-            "Debug info:\n"
-            "/sdcard/multirom_error.txt\n\n"
+            "Log file copied to:\n"
+            "sdcard/multirom_error.txt\n\n"
             "Press POWER button to\n"
-            "Reboot to recovery."
+            "reboot to recovery."
         );
 
-        fb_add_text(0, 8 * ISO_CHAR_HEIGHT * SIZE_NORMAL, GRAYISH, 1, "Last lines from klog:");
-        fb_add_rect(0, 9 * ISO_CHAR_HEIGHT * SIZE_NORMAL + 4, fb_width, 2, GRAYISH);
+        fb_add_text(0, 7 * ISO_CHAR_HEIGHT * SIZE_NORMAL + ISO_CHAR_HEIGHT * SIZE_SMALL, GRAYISH, SIZE_SMALL, "Last lines from klog:");
+        fb_add_rect(0, 7 * ISO_CHAR_HEIGHT * SIZE_NORMAL + 2 * ISO_CHAR_HEIGHT * SIZE_SMALL - 2, fb_width, 2, GRAYISH);
 
         char *tail = klog+strlen(klog);
-        int count = 0;
-        while(tail > klog && count < 30)
+        int count = (fb_height - (7 * ISO_CHAR_HEIGHT * SIZE_NORMAL + 2 * ISO_CHAR_HEIGHT * SIZE_SMALL)) / (ISO_CHAR_HEIGHT * SIZE_SMALL);
+        while(tail > klog && count >= 0)
         {
             --tail;
             if(*tail == '\n')
-                ++count;
+                --count;
         }
 
-        fb_add_text_long(0, 9 * ISO_CHAR_HEIGHT * SIZE_NORMAL + 6, GRAYISH, 1, ++tail);
+        fb_add_text_long(0, 8 * ISO_CHAR_HEIGHT * SIZE_NORMAL + SIZE_SMALL + 2, GRAYISH, 1, ++tail);
 
         fb_draw();
 
