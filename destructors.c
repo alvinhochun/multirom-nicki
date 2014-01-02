@@ -19,7 +19,9 @@
  */
 
 #include <stdlib.h>
+#include <sys/mount.h>
 
+#include "multirom_partitions.h"
 #include "multirom_rom.h"
 #include "util.h"
 
@@ -73,5 +75,21 @@ void free_multirom_rom(struct multirom_rom *p)
         free_multirom_rom_android_img(p->android_img);
         break;
     }
+    free(p);
+}
+
+void free_multirom_partition(struct multirom_partition *p)
+{
+    if(p == NULL)
+        return;
+    free(p->name);
+    free(p->block_dev);
+    if(p->mount_path != NULL)
+    {
+        umount(p->mount_path);
+        free(p->mount_path);
+    }
+    free(p->uuid);
+    free(p->fstype);
     free(p);
 }

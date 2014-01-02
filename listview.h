@@ -20,6 +20,8 @@
 
 #include "input.h"
 #include "framebuffer.h"
+#include "multirom_rom.h"
+#include "checkbox.h"
 
 enum
 {
@@ -30,8 +32,19 @@ enum
 
 typedef struct
 {
-    int id;
-    void *data;
+    char *text;
+    char *partition;
+    fb_text *text_it;
+    fb_text *part_it;
+    fb_rect *bottom_line;
+    fb_rect *hover_rect;
+    checkbox *box;
+} rom_item_data;
+
+typedef struct
+{
+    struct multirom_rom *rom;
+    rom_item_data *data;
     int flags;
 } listview_item;
 
@@ -76,7 +89,7 @@ int listview_touch_handler(touch_event *ev, void *data);
 
 void listview_init_ui(listview *view);
 void listview_destroy(listview *view);
-listview_item *listview_add_item(listview *view, int id, void *data);
+listview_item *listview_add_item(listview *view, struct multirom_rom *rom, void *data);
 void listview_clear(listview *view);
 void listview_update_ui(listview *view);
 void listview_enable_scroll(listview *view, int enable);
@@ -90,7 +103,7 @@ inline void listview_select_item(listview *view, listview_item *it);
 void listview_update_keyact_frame(listview *view);
 int listview_keyaction_call(void *data, int act);
 
-void *rom_item_create(const char *text, const char *partition);
+rom_item_data *rom_item_create(const char *text, const char *partition);
 void rom_item_draw(int x, int y, int w, listview_item *it);
 void rom_item_hide(void *data);
 int rom_item_height(void *data);

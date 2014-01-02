@@ -95,10 +95,10 @@ void listview_destroy(listview *view)
     free(view);
 }
 
-listview_item *listview_add_item(listview *view, int id, void *data)
+listview_item *listview_add_item(listview *view, struct multirom_rom *rom, void *data)
 {
     listview_item *it = malloc(sizeof(listview_item));
-    it->id = id;
+    it->rom = rom;
     it->data = data;
     it->flags = 0;
 
@@ -438,18 +438,8 @@ void listview_update_keyact_frame(listview *view)
 
 #define ROM_ITEM_H (100*DPI_MUL)
 #define ROM_TEXT_PADDING (100*DPI_MUL)
-typedef struct
-{
-    char *text;
-    char *partition;
-    fb_text *text_it;
-    fb_text *part_it;
-    fb_rect *bottom_line;
-    fb_rect *hover_rect;
-    checkbox *box;
-} rom_item_data;
 
-void *rom_item_create(const char *text, const char *partition)
+rom_item_data *rom_item_create(const char *text, const char *partition)
 {
     rom_item_data *data = malloc(sizeof(rom_item_data));
     memset(data, 0, sizeof(rom_item_data));

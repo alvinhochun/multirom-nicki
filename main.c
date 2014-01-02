@@ -25,7 +25,8 @@
 #include <errno.h>
 #include <time.h>
 
-#include "multirom.h"
+#include "multirom_main.h"
+#include "multirom_misc.h"
 #include "framebuffer.h"
 #include "log.h"
 #include "version.h"
@@ -35,27 +36,28 @@
 #define KEEP_REALDATA "/dev/.keep_realdata"
 #define REALDATA "/realdata"
 
-static void do_reboot(int exit)
+static void __attribute__((noreturn)) do_reboot(int exit)
 {
     sync();
     umount(REALDATA);
 
     if(exit & EXIT_REBOOT_RECOVERY)         android_reboot(ANDROID_RB_RESTART2, 0, "recovery");
     else if(exit & EXIT_REBOOT_BOOTLOADER)  android_reboot(ANDROID_RB_RESTART2, 0, "bootloader");
-    else if(exit & EXIT_SHUTDOWN)           android_reboot(ANDROID_RB_POWEROFF, 0, 0);
-    else                                    android_reboot(ANDROID_RB_RESTART, 0, 0);
+    else if(exit & EXIT_POWEROFF)           android_reboot(ANDROID_RB_POWEROFF, 0, NULL);
+    else                                    android_reboot(ANDROID_RB_RESTART, 0, NULL);
 
     while(1);
 }
 
-static void do_kexec(void)
+static __attribute__((noreturn)) void do_kexec(void)
 {
     sync();
     umount(REALDATA);
 
-    execl("/kexec", "/kexec", "-e", NULL);
+    execl("/multirom/kexec", "/multirom/kexec", "-e", NULL);
 
     ERROR("kexec -e failed! (%d: %s)", errno, strerror(errno));
+    multirom_emergency_reboot_recovery();
     while(1);
 }
 
@@ -88,18 +90,12 @@ int main(int argc, char *argv[])
         if(exit & EXIT_REBOOT_MASK)
         {
             do_reboot(exit);
-            return 0;
         }
 
         if(exit & EXIT_KEXEC)
         {
             do_kexec();
-            return 0;
         }
-
-        // indicates trampoline to keep /realdata mounted
-        if(!(exit & EXIT_UMOUNT))
-            close(open(KEEP_REALDATA, O_WRONLY | O_CREAT, 0000));
     }
 
     vt_set_mode(0);

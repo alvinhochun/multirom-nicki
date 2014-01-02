@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <dirent.h>
+#include <cutils/android_reboot.h>
 
 #include "devices.h"
 #include "log.h"
@@ -37,7 +38,6 @@
 #define REALDATA "/realdata"
 #define MULTIROM_BIN "multirom"
 #define BUSYBOX_BIN "busybox"
-#define KEEP_REALDATA "/dev/.keep_realdata"
 
 // Not defined in android includes?
 #define MS_RELATIME (1<<21)
@@ -47,23 +47,9 @@ static char path_multirom[] = "/multirom";
 static int run_multirom_bin(char *path)
 {
     ERROR("Running multirom");
-    pid_t pID = fork();
-    if(pID == 0)
-    {
-        char * cmd[] = { path, NULL };
-        int res = execve(cmd[0], cmd, NULL);
-
-        ERROR("exec failed %d %d %s\n", res, errno, strerror(errno));
-        _exit(127);
-    }
-    else
-    {
-        int status = 0;
-        while(waitpid(pID, &status, WNOHANG) == 0)
-            usleep(300000);
-        ERROR("MultiROM exited with status %d", status);
-        return status;
-    }
+    int status = run_cmd((char *const[]){ path, NULL });
+    ERROR("MultiROM exited with status %d", status);
+    return status;
 }
 
 static void run_multirom(void)
@@ -80,10 +66,6 @@ static void run_multirom(void)
     }
     chmod(path, EXEC_MASK);
 
-    // restart after crash
-    sprintf(path, "%s/restart_after_crash", path_multirom);
-    int restart = (stat(path, &info) >= 0);
-
     // multirom
     sprintf(path, "%s/%s", path_multirom, MULTIROM_BIN);
     if (stat(path, &info) < 0)
@@ -93,47 +75,19 @@ static void run_multirom(void)
     }
     chmod(path, EXEC_MASK);
 
-    do {
+    int i;
+    for(i = 0; i < 3; ++i)
+    {
         if(run_multirom_bin(path) == 0)
             break;
-    } while(restart);
-}
-
-static void mount_and_run(struct fstab *fstab)
-{
-    struct fstab_part *p = fstab_find_by_path(fstab, "/data");
-    if(!p)
-    {
-        ERROR("Failed to find /data partition in fstab\n");
-        return;
+        ERROR("MultiROM probably crashed!");
     }
-
-    if(wait_for_file(p->device, 5) < 0)
+    if(i == 3)
     {
-        ERROR("Waiting too long for dev %s", p->device);
-        return;
+        ERROR("MultiROM crashed 3 times! Rebooting into recovery");
+        android_reboot(ANDROID_RB_RESTART2, 0, "recovery");
+        while(1);
     }
-
-    // Remove nosuid flag, because secondary ROMs have
-    // su binaries on /data
-    p->mountflags &= ~(MS_NOSUID);
-
-    mkdir(REALDATA, 0755);
-    if (mount(p->device, REALDATA, p->type, p->mountflags, p->options) < 0)
-    {
-        ERROR("Failed to mount /realdata %d\n", errno);
-        return;
-    }
-
-    if(find_multirom() == -1)
-    {
-        ERROR("Could not find multirom folder!");
-        return;
-    }
-
-    adb_init(path_multirom);
-    run_multirom();
-    adb_quit();
 }
 
 static int is_charger_mode()
@@ -150,10 +104,66 @@ static int is_charger_mode()
     return (strstr(buff, "androidboot.mode=charger") != NULL);
 }
 
+static int is_reboot_recovery()
+{
+    char buff[2048] = { 0 };
+
+    FILE *f = fopen("/proc/cmdline", "r");
+    if(!f)
+        return 0;
+
+    fgets(buff, sizeof(buff), f);
+    fclose(f);
+
+    // See kernel source arch/arm/mach-msm/restart.c at msm_reboot_call
+    return (strstr(buff, "warmboot=0x77665502") != NULL);
+}
+
+static int should_enter_recovery(struct fstab *fstab)
+{
+    if(is_reboot_recovery())
+    {
+        ERROR("Reboot recovery detected");
+        return 1;
+    }
+
+    if(!fstab)
+        return 0;
+
+    struct fstab_part *p = fstab_find_by_path(fstab, "/cache");
+    if(!p)
+    {
+        ERROR("Failed to find /cache partition in fstab");
+        return 0;
+    }
+
+    if(wait_for_file(p->device, 5) < 0)
+    {
+        ERROR("Waiting too long for dev %s", p->device);
+        return 0;
+    }
+
+    mkdir("/cache", 0755);
+
+    if (mount(p->device, "/cache", p->type, p->mountflags, p->options) < 0)
+    {
+        ERROR("Failed to mount /cache %d\n", errno);
+        rmdir("/cache");
+        return 0;
+    }
+
+    int ret = access("/cache/recovery/boot", F_OK) == 0;
+    if(ret)
+        remove("/cache/recovery/boot");
+
+    umount("/cache");
+    rmdir("/cache");
+    return ret;
+}
+
 int main(int argc, char *argv[])
 {
     int i, res;
-    static char *const cmd[] = { "/main_init", NULL };
     struct fstab *fstab = NULL;
 
     for(i = 1; i < argc; ++i)
@@ -170,15 +180,16 @@ int main(int argc, char *argv[])
 
     // Init only the little we need, leave the rest for real init
     mkdir("/dev", 0755);
+    mount("tmpfs", "/dev", "tmpfs", MS_NOSUID, "mode=0755");
     mkdir("/dev/pts", 0755);
+    mount("devpts", "/dev/pts", "devpts", 0, "");
     mkdir("/dev/socket", 0755);
     mkdir("/proc", 0755);
+    mount("proc", "/proc", "proc", 0, "");
     mkdir("/sys", 0755);
-
-    mount("tmpfs", "/dev", "tmpfs", MS_NOSUID, "mode=0755");
-    mount("devpts", "/dev/pts", "devpts", 0, NULL);
-    mount("proc", "/proc", "proc", 0, NULL);
-    mount("sysfs", "/sys", "sysfs", 0, NULL);
+    mount("sysfs", "/sys", "sysfs", 0, "");
+    mkdir("/mnt", 0755);
+    mount("tmpfs", "/mnt", "tmpfs", 0, "");
 
     klog_init();
     ERROR("Running trampoline v%d\n", VERSION_TRAMPOLINE);
@@ -186,61 +197,121 @@ int main(int argc, char *argv[])
     if(is_charger_mode())
     {
         ERROR("Charger mode detected, skipping multirom\n");
-        goto run_main_init;
     }
-
-#if MR_DEVICE_HOOKS >= 3
-    tramp_hook_before_device_init();
-#endif
-
-    ERROR("Initializing devices...");
-    devices_init();
-    ERROR("Done initializing");
-
-    if(wait_for_file("/dev/graphics/fb0", 5) < 0)
+    else
     {
-        ERROR("Waiting too long for fb0");
-        goto exit;
-    }
+        ERROR("Initializing devices...");
+        devices_init();
+        ERROR("Done initializing");
 
-    fstab = fstab_auto_load();
-    if(!fstab)
-        goto exit;
-
-#if 0 
-    fstab_dump(fstab); //debug
+        fstab = fstab_auto_load();
+        if(should_enter_recovery(fstab))
+        {
+            ERROR("Entering recovery, extracting recovery.gz to boot.cpio...");
+            int status = shell_cmd("/multirom/busybox zcat /multirom/recovery.gz > /multirom/boot.cpio");
+            if(status != 0)
+            {
+                ERROR("Cannot extract recovery.gz! Status %d", status);
+            }
+        }
+        else if(fstab)
+        {
+#if 0
+            fstab_dump(fstab); //debug
 #endif
+            if(wait_for_file("/dev/graphics/fb0", 5) >= 0)
+            {
+                //adb_init(path_multirom);
+                /*while(access("/multirom/blah", F_OK) < 0)
+                    usleep(1000000);*/
+                //sleep(20);
+                //remove("/multirom/blah");
+                run_multirom();
+                //adb_quit();
+            }
+            else
+            {
+                ERROR("Waiting too long for fb0");
+            }
+        }
+        else
+        {
+            ERROR("Cannot load fstab, skipping MultiROM");
+        }
 
-    // mount and run multirom from sdcard
-    mount_and_run(fstab);
+        if(fstab)
+            fstab_destroy(fstab);
 
-exit:
-    if(fstab)
-        fstab_destroy(fstab);
-
-    // close and destroy everything
-    devices_close();
-
-run_main_init:
-    if(access(KEEP_REALDATA, F_OK) < 0)
-    {
-        umount(REALDATA);
-        umount("/dev/pts");
-        umount("/dev");
-        rmdir("/dev/pts");
-        rmdir("/dev/socket");
-        rmdir("/dev");
-        rmdir(REALDATA);
+        // close and destroy everything
+        devices_close();
     }
 
+    DIR *d = opendir("/mnt");
+    if(d != NULL)
+    {
+        struct dirent *dr;
+        while((dr = readdir(d)) != NULL)
+        {
+            if(dr->d_name[0] == '.')
+                continue;
+
+            if(dr->d_type != DT_DIR)
+                continue;
+
+            char buf[256];
+            strncpy(buf, "/mnt/", strlen("/mnt/"));
+            strncpy(buf + strlen("/mnt"), dr->d_name, sizeof(buf) - strlen("/mnt"));
+            // FIXME: handle properly instead of truncating string
+            buf[sizeof(buf) - 1] = '\0';
+            umount(buf);
+        }
+        closedir(d);
+    }
+    umount("/mnt");
+    remove("/mnt");
+
+    if(access("/multirom/boot.cpio", F_OK) < 0)
+    {
+        ERROR("Extracting boot.gz to boot.cpio...");
+        int status = shell_cmd("/multirom/busybox zcat /multirom/boot.gz > /multirom/boot.cpio");
+        if(status != 0)
+        {
+            ERROR("Cannot extract boot.gz! Status %d", status);
+        }
+    }
+
+    umount("/dev/pts");
+    rmdir("/dev/pts");
+    rmdir("/dev/socket");
+    umount("/dev");
+    rmdir("/dev");
     umount("/proc");
-    umount("/sys");
     rmdir("/proc");
+    umount("/sys");
     rmdir("/sys");
 
-    chmod("/main_init", EXEC_MASK);
+    remove("/init");
+    remove("/multirom/fstab");
+    remove("/multirom/multirom");
+    remove("/multirom/adbd");
+    remove("/multirom/kexec");
+    remove("/multirom/recovery.gz");
+    remove("/multirom/boot.gz");
 
-    ERROR("Running main_init\n");
+    ERROR("extracting boot.cpio...");
+    int status = shell_cmd("cd /; /multirom/busybox cpio -i < /multirom/boot.cpio");
+    if(status != 0)
+    {
+        ERROR("Cannot extract boot.cpio! Status %d", status);
+    }
+
+    remove("/multirom/boot.cpio");
+
+    static char *const cmd[] = { "/init", NULL };
+    chmod(cmd[0], EXEC_MASK);
+    chdir("/");
+
+    ERROR("Running main init\n");
     // run the main init
     res = execve(cmd[0], cmd, NULL);
     ERROR("execve returned %d %d %s\n", res, errno, strerror(errno));

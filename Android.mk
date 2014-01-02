@@ -9,7 +9,12 @@ LOCAL_SRC_FILES:= \
     main.c \
     util.c \
     framebuffer.c \
-    multirom.c \
+    multirom_main.c \
+    multirom_misc.c \
+    multirom_partitions.c \
+    multirom_rom.c \
+    multirom_status.c \
+    destructors.c \
     input.c \
     multirom_ui.c \
     listview.c \

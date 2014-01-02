@@ -52,18 +52,19 @@ static char * const ENV[] = {
 
 static void *adb_thread_work(void *mrom_path)
 {
-    int enabled = adb_is_enabled((char*)mrom_path);
+    //int enabled = adb_is_enabled((char*)mrom_path);
     free(mrom_path);
+    ERROR("adb here");
 
-    if(enabled != 0)
-        return NULL;
+    //if(enabled != 0)
+    //    return NULL;
 
     adb_init_usb();
 
     if(adb_init_busybox() < 0)
         return NULL;
 
-    adb_init_fs();
+    //adb_init_fs();
 
     chmod(adbd_path, 0755);
 
@@ -79,18 +80,20 @@ static void *adb_thread_work(void *mrom_path)
 
             static char * const cmd[] = { adbd_path, NULL };
             execve(cmd[0], cmd, ENV);
-            exit(0);
+            exit(127);
         }
         else
         {
             int status = 0;
             while(waitpid(adb_pid, &status, WNOHANG) == 0)
                 usleep(300000);
+            ERROR("adb stop %d", status);
         }
         usleep(300000);
     }
 
     adb_cleanup();
+    write_file("/sys/class/android_usb/android0/enable", "0");
 
     return NULL;
 }
@@ -147,25 +150,20 @@ void adb_init_usb(void)
 
 int adb_init_busybox(void)
 {
-    mkdir("/mrom_bin", 0777);
+    mkdir("/mrom_bin", 0755);
+    mount("tmpfs", "/mrom_bin", "tmpfs", 0, "");
 
     copy_file(busybox_path, "/mrom_bin/busybox");
     chmod("/mrom_bin/busybox", 0755);
 
-    static const char *install_cmd[] = {
+    static char *const install_cmd[] = {
         "/mrom_bin/busybox", "--install", "/mrom_bin/", NULL
     };
 
-    if(run_cmd((char**)install_cmd) != 0)
+    int status = run_cmd(install_cmd);
+    if(status != 0)
     {
-        ERROR("adb: failed to --install busybox\n");
-        return -1;
-    }
-
-    mkdir("/dev/pts", 0666);
-    if(mount("devpts", "/dev/pts", "devpts", 0, NULL) < 0)
-    {
-        ERROR("Failed to mount devpts: %d (%s)\n", errno, strerror(errno));
+        ERROR("adb: failed to --install busybox %d\n", status);
         return -1;
     }
 
@@ -183,13 +181,8 @@ void adb_init_fs(void)
 
 void adb_cleanup(void)
 {
-    if(umount("/sdcard") >= 0)
-        remove_dir("/sdcard");
-
-    remove_dir("/mrom_bin");
-
-    umount("/dev/pts");
-    rmdir("/dev/pts");
+    umount("/mrom_bin");
+    rmdir("/mrom_bin");
 }
 
 int adb_get_serial(char *serial, int maxlen)
@@ -222,6 +215,7 @@ int adb_get_serial(char *serial, int maxlen)
 
 int adb_is_enabled(char *mrom_path)
 {
+    return 0;
     char cfg[64];
     char *cmd[] = { busybox_path, "grep", "^enable_adb=1$", cfg, NULL };
     sprintf(cfg, "%s/multirom.ini", mrom_path);

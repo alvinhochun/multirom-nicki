@@ -13,13 +13,12 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with MultiROM.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Copyright (c) 2013-2014 alvinhochun-at-gmail-com
+ * Copyright (c) 2011-2013 vbocek-at-gmail-com
+ *
  */
 
-#ifndef VERSION_H
-#define VERSION_H
-    #define VERSION_MULTIROM 100
-    #define VERSION_TRAMPOLINE 100
+#include "multirom_status.h"
 
-    // For device-specific fixes. Use letters, the version will then be like "12a"
-    #define VERSION_DEV_FIX "$"
-#endif
+struct multirom_status multirom_status = { 0 };

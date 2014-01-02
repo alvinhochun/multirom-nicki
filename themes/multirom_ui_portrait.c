@@ -17,7 +17,6 @@
 
 #include "../multirom_ui.h"
 #include "../multirom_ui_themes.h"
-#include "../multirom.h"
 #include "../framebuffer.h"
 #include "../util.h"
 #include "../button.h"
@@ -60,7 +59,7 @@ static void init_header(multirom_theme_data *t)
     int i, tab_x, tab_width;
 
     static const char *header = "MultiROM";
-    static const char *tabs[TAB_COUNT] = { "Internal", "USB", "Misc" };
+    static const char *tabs[TAB_COUNT] = { "Internal", "microSD", "USB", "Misc" };
 
     fb_add_text(PADDING_S, PADDING_S, WHITE, SIZE_NORMAL, header);
 
@@ -170,7 +169,7 @@ static void tab_misc_init(multirom_theme_data *t, tab_data_misc *d, int color_sc
         { UI_EXIT_REBOOT, "Reboot" },
         { UI_EXIT_REBOOT_RECOVERY, "Recovery" },
         { UI_EXIT_REBOOT_BOOTLOADER, "Bootloader" },
-        { UI_EXIT_SHUTDOWN, "Power Off" },
+        { UI_EXIT_POWEROFF, "Power Off" },
         { 0, NULL },
     };
 

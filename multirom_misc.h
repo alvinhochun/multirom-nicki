@@ -15,11 +15,22 @@
  * along with MultiROM.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef VERSION_H
-#define VERSION_H
-    #define VERSION_MULTIROM 100
-    #define VERSION_TRAMPOLINE 100
+#ifndef MULTIROM_MISC_H_
+#define MULTIROM_MISC_H_
 
-    // For device-specific fixes. Use letters, the version will then be like "12a"
-    #define VERSION_DEV_FIX "$"
-#endif
+#include "multirom_rom.h"
+#include "multirom_status.h"
+
+void multirom_emergency_reboot_recovery(void) __attribute__((noreturn));
+int multirom_init_fb(int rotation);
+int multirom_has_kexec(void);
+char *multirom_get_bootloader_cmdline(void);
+int multirom_load_kexec(struct multirom_status *s, struct multirom_rom *rom);
+char *multirom_get_klog(void);
+int multirom_copy_log(char *klog);
+int multirom_get_battery(void);
+void multirom_set_brightness(int val);
+void multirom_take_screenshot(void);
+int multirom_get_trampoline_ver(void);
+
+#endif /* MULTIROM_MISC_H_ */

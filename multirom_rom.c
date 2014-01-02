@@ -27,17 +27,20 @@
 
 #include "multirom_rom.h"
 #include "util.h"
+#include "log.h"
 
 /*
  * Scans for ROMs.
- * `partition`: the partition to scan
+ * Also use this even if internal cannot be mounted (e.g. encrypted) to create internal entry,
+ * but if this is the case, pass a part for a temp dir or this may blow up.
+ * `partition`: the partition to scan (or a dummy one to a temp dir)
  * returns: a list (ptr to ptr) of struct multirom_rom
  */
 struct multirom_rom **multirom_scan_roms(struct multirom_partition *partition)
 {
     char *multirom_basepath;
     int res;
-    if(partition->is_internal)
+    if(partition->type == PART_INTERNAL)
         res = asprintf(&multirom_basepath, "%s/multirom", partition->mount_path);
     else
         res = asprintf(&multirom_basepath, "%s/multirom-"TARGET_DEVICE, partition->mount_path);
@@ -80,7 +83,7 @@ struct multirom_rom **multirom_scan_roms(struct multirom_partition *partition)
     closedir(d);
 
     // Add internal
-    if(partition->is_internal && !has_internal)
+    if(partition->type == PART_INTERNAL && !has_internal)
     {
         ERROR("Internal ROM entry not found, attempting to create it...");
         struct multirom_rom *rom = multirom_create_internal_entry(multirom_basepath, partition);
@@ -124,15 +127,15 @@ struct multirom_rom *multirom_parse_rom_entry(const char *multirom_basepath, con
     rom->name = strdup(rom_name);
     rom->partition = partition;
 
-    if(partition->is_internal && strcmp(rom_name, "internal") == 0)
+    if(partition->type == PART_INTERNAL && strcmp(rom_name, "internal") == 0)
     {
         rom->type = ROM_TYPE_ANDROID_INT;
     }
     else
     {
         char buf[256];
-        res = snprintf(buf, sizeof(buf), "%s/rom.cfg");
-        if(res >= sizeof(buf) || res < 0)
+        res = snprintf(buf, sizeof(buf), "%s/rom.cfg", rom_basepath);
+        if(res >= (int)sizeof(buf) || res < 0)
             goto fail;
 
         FILE *f = fopen(buf, "r");
@@ -218,6 +221,13 @@ done:
     return rom;
 }
 
+/*
+ * Creates internal ROM entry 'cause it does not exist
+ * Also use this even if internal cannot be mounted (e.g. encrypted),
+ * but if this is the case, pass a temp directory or this may blow up.
+ * `multirom_basepath`: the path to the multirom dir of the partition or temp dir
+ * `partition`: the partition (or a dummy one for temp dir)
+ */
 struct multirom_rom *multirom_create_internal_entry(const char *multirom_basepath, struct multirom_partition *partition)
 {
     struct multirom_rom *rom = NULL;
@@ -418,8 +428,8 @@ struct multirom_romdata *multirom_parse_romdata_entry(const char *rom_basepath, 
     else
     {
         char buf[256];
-        res = snprintf(buf, sizeof(buf), "%s/profile.cfg");
-        if(res >= sizeof(buf) || res < 0)
+        res = snprintf(buf, sizeof(buf), "%s/profile.cfg", romdata_basepath);
+        if(res >= (int)sizeof(buf) || res < 0)
             goto fail;
 
         FILE *f = fopen(buf, "r");

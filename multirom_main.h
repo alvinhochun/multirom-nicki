@@ -13,13 +13,28 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with MultiROM.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Copyright (c) 2013-2014 alvinhochun-at-gmail-com
+ * Copyright (c) 2011-2013 vbocek-at-gmail-com
+ *
  */
 
-#ifndef VERSION_H
-#define VERSION_H
-    #define VERSION_MULTIROM 100
-    #define VERSION_TRAMPOLINE 100
+#ifndef MULTIROM_MAIN_H_
+#define MULTIROM_MAIN_H_
 
-    // For device-specific fixes. Use letters, the version will then be like "12a"
-    #define VERSION_DEV_FIX "$"
-#endif
+enum exit_status
+{
+    EXIT_NORMALBOOT          = 0,
+    EXIT_REBOOT              = 0x01,
+    //EXIT_UMOUNT              = 0x02,
+    EXIT_REBOOT_RECOVERY     = 0x04,
+    EXIT_REBOOT_BOOTLOADER   = 0x08,
+    EXIT_POWEROFF            = 0x10,
+    EXIT_KEXEC               = 0x20,
+
+    EXIT_REBOOT_MASK         = (EXIT_REBOOT | EXIT_REBOOT_RECOVERY | EXIT_REBOOT_BOOTLOADER | EXIT_POWEROFF),
+};
+
+enum exit_status multirom(void);
+
+#endif /* MULTIROM_MAIN_H_ */

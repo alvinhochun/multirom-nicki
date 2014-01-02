@@ -21,6 +21,8 @@
 #ifndef MULTIROM_ROM_H_
 #define MULTIROM_ROM_H_
 
+#include "multirom_partitions.h"
+
 enum
 {
     ROMTYPE_FMT_IMG = 1,    // Image format
@@ -66,17 +68,6 @@ struct multirom_romdata_android_img
 };
 
 void free_multirom_romdata_android_img(struct multirom_romdata_android_img *p);
-
-struct multirom_partition
-{
-    char *name;
-    char *mount_path;
-    char *uuid;
-    char *type;
-    int is_internal;
-};
-
-void free_multirom_partition(struct multirom_partition *p);
 
 /*
  * ROM userdata, data

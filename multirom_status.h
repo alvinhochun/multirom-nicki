@@ -13,13 +13,29 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with MultiROM.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Copyright (c) 2013-2014 alvinhochun-at-gmail-com
+ * Copyright (c) 2011-2013 vbocek-at-gmail-com
+ *
  */
 
-#ifndef VERSION_H
-#define VERSION_H
-    #define VERSION_MULTIROM 100
-    #define VERSION_TRAMPOLINE 100
+#ifndef MULTIROM_STATUS_H_
+#define MULTIROM_STATUS_H_
 
-    // For device-specific fixes. Use letters, the version will then be like "12a"
-    #define VERSION_DEV_FIX "$"
-#endif
+#include "multirom_partitions.h"
+#include "multirom_pref.h"
+#include "multirom_rom.h"
+#include "fstab.h"
+
+struct multirom_status
+{
+    struct fstab *fstab;
+    struct multirom_partition **partitions; // A list of partitions
+    struct multirom_rom **roms; // A list of ROMs
+    char *external_sd; // Path to external sd mount point or NULL
+    struct multirom_pref pref;
+};
+
+extern struct multirom_status multirom_status;
+
+#endif /* MULTIROM_STATUS_H_ */

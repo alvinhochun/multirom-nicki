@@ -266,7 +266,7 @@ int write_file(const char *path, const char *value)
 {
     int fd, ret, len;
 
-    fd = open(path, O_WRONLY|O_CREAT, 0622);
+    fd = open(path, O_WRONLY | O_CREAT, 0622);
 
     if (fd < 0)
     {
@@ -331,6 +331,32 @@ int remove_dir(const char *dir)
     return res;
 }
 
+int is_file(const char *path)
+{
+    struct stat info;
+
+    if(stat(path, &info) < 0)
+        return 0;
+
+    if(S_ISREG(info.st_mode))
+        return 1;
+    else
+        return 0;
+}
+
+int is_dir(const char *path)
+{
+    struct stat info;
+
+    if(stat(path, &info) < 0)
+        return 0;
+
+    if(S_ISDIR(info.st_mode))
+        return 1;
+    else
+        return 0;
+}
+
 void stdio_to_null(void)
 {
     int fd = open("/dev/null", O_RDWR);
@@ -343,13 +369,24 @@ void stdio_to_null(void)
     }
 }
 
-int run_cmd(char **cmd)
+int run_cmd(char *const cmd[])
 {
-    pid_t pID = vfork();
+    return run_cmd_env(cmd, NULL);
+}
+
+int shell_cmd(char *cmd)
+{
+    return run_cmd((char *const[]){ "/multirom/busybox", "sh", "-c", cmd, NULL });
+}
+
+int run_cmd_env(char *const cmd[], char *const env[])
+{
+    pid_t pID = fork();
     if(pID == 0)
     {
         stdio_to_null();
-        execve(cmd[0], cmd, NULL);
+        int res = execve(cmd[0], cmd, env);
+        ERROR("exec %s failed, ret: %d err: %d %s\n", cmd[0], res, errno, strerror(errno));
         _exit(127);
     }
     else
@@ -361,28 +398,28 @@ int run_cmd(char **cmd)
     }
 }
 
-char *run_get_stdout(char **cmd)
+char *run_get_stdout(char *const cmd[])
 {
    int fd[2];
    if(pipe(fd) < 0)
         return NULL;
 
-    pid_t pid = vfork();
+    pid_t pid = fork();
     if (pid < 0)
     {
         close(fd[0]);
         close(fd[1]);
         return NULL;
     }
-
-    if(pid == 0) // child
+    else if(pid == 0) // child
     {
         close(fd[0]);
         dup2(fd[1], 1);  // send stdout to the pipe
         dup2(fd[1], 2);  // send stderr to the pipe
         close(fd[1]);
 
-        execv(cmd[0], cmd);
+        int res = execv(cmd[0], cmd);
+        ERROR("exec %s failed, ret: %d err: %d %s\n", cmd[0], res, errno, strerror(errno));
         _exit(127);
     }
     else
@@ -413,7 +450,6 @@ char *run_get_stdout(char **cmd)
         }
         return res;
     }
-    return NULL;
 }
 
 uint32_t timespec_diff(struct timespec *f, struct timespec *s)

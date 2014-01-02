@@ -248,8 +248,7 @@ void fstab_parse_options(char *opt, struct fstab_part *part)
 
 struct fstab *fstab_auto_load(void)
 {
-    char path[] = "/multirom/fstab";
-    path[0] = 0;
+    const char *path = "/multirom/fstab";
 
     if(access(path, F_OK) < 0)
     {

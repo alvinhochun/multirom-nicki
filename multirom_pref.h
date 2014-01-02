@@ -15,11 +15,13 @@
  * along with MultiROM.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef VERSION_H
-#define VERSION_H
-    #define VERSION_MULTIROM 100
-    #define VERSION_TRAMPOLINE 100
+#ifndef MULTIROM_PREF_H_
+#define MULTIROM_PREF_H_
 
-    // For device-specific fixes. Use letters, the version will then be like "12a"
-    #define VERSION_DEV_FIX "$"
-#endif
+struct multirom_pref
+{
+    int color;
+    int brightness;
+};
+
+#endif /* MULTIROM_PREF_H_ */

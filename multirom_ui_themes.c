@@ -17,7 +17,6 @@
 
 #include "multirom_ui.h"
 #include "multirom_ui_themes.h"
-#include "multirom.h"
 #include "util.h"
 #include "log.h"
 
