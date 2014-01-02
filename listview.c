@@ -445,9 +445,10 @@ rom_item_data *rom_item_create(const char *rom_name, const char *rom_profile, co
     rom_item_data *data = mzalloc(sizeof(rom_item_data));
 
     data->rom_name = strdup(rom_name);
-    data->rom_profile = malloc(strlen(rom_profile) + 2);
+    data->rom_profile = malloc(strlen(rom_profile) + 3);
     data->rom_profile[0] = '>';
-    strcpy(data->rom_profile + 1, rom_profile);
+    data->rom_profile[1] = ' ';
+    strcpy(data->rom_profile + 2, rom_profile);
     if(partition)
         data->partition = strdup(partition);
     return data;

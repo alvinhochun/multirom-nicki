@@ -161,7 +161,7 @@ static void tab_misc_init(multirom_theme_data *t, tab_data_misc *d, int color_sc
     b->w = MISCBTN_W;
     b->h = MISCBTN_H;
     b->clicked = &multirom_ui_tab_misc_copy_log;
-    button_init_ui(b, "Copy log to /sdcard", SIZE_NORMAL);
+    button_init_ui(b, "Copy log to sdcard", SIZE_NORMAL);
     list_add(b, &d->buttons);
 
     y += MISCBTN_H + PADDING_L * 3;

@@ -176,8 +176,8 @@ int multirom_ui(struct multirom_rom **to_boot, struct multirom_romdata **boot_pr
             *to_boot = selected_rom;
             *boot_profile = selected_profile;
             fb_msgbox_add_text(-1, 40*DPI_MUL, SIZE_BIG, "Booting ROM...");
-            fb_msgbox_add_text(-1, -1, SIZE_NORMAL, selected_rom->name);
-            fb_msgbox_add_text(-1, -1, SIZE_NORMAL, selected_profile->name);
+            fb_msgbox_add_text(-1, 40*DPI_MUL + ISO_CHAR_HEIGHT * SIZE_BIG * 2, SIZE_NORMAL, selected_rom->name);
+            fb_msgbox_add_text(-1, 40*DPI_MUL + ISO_CHAR_HEIGHT * (SIZE_BIG * 2 + SIZE_NORMAL), SIZE_NORMAL, selected_profile->name);
             break;
         case UI_EXIT_REBOOT:
         case UI_EXIT_REBOOT_RECOVERY:
@@ -529,9 +529,14 @@ void multirom_ui_tab_rom_selected(listview_item *prev, listview_item *now)
     t->rom_name->text = strdup(rom->name);
 
     free(t->rom_profile->text);
-    t->rom_profile->text = strdup(profile->name);
+    size_t profile_len = strlen(profile->name);
+    t->rom_profile->text = malloc(profile_len + 3);
+    t->rom_profile->text[0] = '<';
+    strcpy(t->rom_profile->text + 1, profile->name);
+    t->rom_profile->text[profile_len + 1] = '>';
+    t->rom_profile->text[profile_len + 2] = '\0';
 
-    cur_theme->center_rom_name(t, rom->name, profile->name);
+    cur_theme->center_rom_name(t, rom->name, t->rom_profile->text);
 
     fb_draw();
 }
@@ -648,7 +653,8 @@ void multirom_ui_tab_rom_set_empty(tab_data_roms *data, int empty, int tab_type)
     if(t->boot_btn)
         button_enable(t->boot_btn, !empty);
 
-    if(empty && tab_type == TAB_USB && !t->usb_text)
+    // TODO: usb hot plugging
+    if(0 && empty && tab_type == TAB_USB && !t->usb_text)
     {
         const int line_len = 29;
         static const char *txt = "Please plug in the USB drive.\nThis list will update itself.";
