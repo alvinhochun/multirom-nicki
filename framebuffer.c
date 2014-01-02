@@ -47,6 +47,12 @@
 #define fb_memset(dst, what, len) android_memset16(dst, what, len)
 #endif
 
+/*
+ * For this device, the framebuffer start needs to be aligned to a 4096-byte
+ * boundary.
+ */
+#define FB_MEM_ALIGN 0x1000
+
 
 static struct FB framebuffers[NUM_BUFFERS];
 static int active_fb = 0;
@@ -184,6 +190,11 @@ int fb_open(int rotation)
     px_type *b_store = malloc(vi.xres_virtual*vi.yres*PIXEL_SIZE);
     fb_memset(b_store, fb_convert_color(BLACK), vi.xres_virtual*vi.yres*PIXEL_SIZE);
 
+    unsigned fb_size = vi.yres * fi.line_length;
+    if (fb_size % FB_MEM_ALIGN != 0) {
+        fb_size += FB_MEM_ALIGN - fb_size % FB_MEM_ALIGN;
+    }
+
     for(i = 0; i < NUM_BUFFERS; ++i)
     {
         fb = &framebuffers[i];
@@ -193,7 +204,7 @@ int fb_open(int rotation)
         fb->fi = fi;
         fb->stride = (fb_rotation%180 == 0) ? vi.xres_virtual : vi.yres;
         fb->bits = b_store;
-        fb->mapped = (px_type*)(((uint8_t*)(bits)) + (vi.yres * fi.line_length * i));
+        fb->mapped = (px_type*)(((uint8_t*)(bits)) + (fb_size * i));
     }
 
     // fb always points to the first framebuffer
