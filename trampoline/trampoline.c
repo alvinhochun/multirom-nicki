@@ -44,6 +44,32 @@
 
 static char path_multirom[] = "/multirom";
 
+static void clean_mnt_mounts(void)
+{
+    DIR *d = opendir("/mnt");
+    if(d != NULL)
+    {
+        struct dirent *dr;
+        while((dr = readdir(d)) != NULL)
+        {
+            if(dr->d_name[0] == '.')
+                continue;
+
+            if(dr->d_type != DT_DIR)
+                continue;
+
+            char buf[256];
+            strncpy(buf, "/mnt/", strlen("/mnt/"));
+            strncpy(buf + strlen("/mnt"), dr->d_name, sizeof(buf) - strlen("/mnt"));
+            // FIXME: handle properly instead of truncating string
+            buf[sizeof(buf) - 1] = '\0';
+            umount(buf);
+        }
+        closedir(d);
+    }
+    umount("/mnt");
+}
+
 static int run_multirom_bin(char *path)
 {
     ERROR("Running multirom");
@@ -81,6 +107,8 @@ static void run_multirom(void)
         if(run_multirom_bin(path) == 0)
             break;
         ERROR("MultiROM probably crashed!");
+        clean_mnt_mounts(); // MultiROM may have mounted partitions, so umount them
+        mount("tmpfs", "/mnt", "tmpfs", 0, ""); // mount a clean tmpfs
     }
     if(i == 3)
     {
@@ -221,13 +249,13 @@ int main(int argc, char *argv[])
 #endif
             if(wait_for_file("/dev/graphics/fb0", 5) >= 0)
             {
-                //adb_init(path_multirom);
+                adb_init(path_multirom);
                 /*while(access("/multirom/blah", F_OK) < 0)
                     usleep(1000000);*/
                 //sleep(20);
                 //remove("/multirom/blah");
                 run_multirom();
-                //adb_quit();
+                adb_quit();
             }
             else
             {
@@ -246,28 +274,7 @@ int main(int argc, char *argv[])
         devices_close();
     }
 
-    DIR *d = opendir("/mnt");
-    if(d != NULL)
-    {
-        struct dirent *dr;
-        while((dr = readdir(d)) != NULL)
-        {
-            if(dr->d_name[0] == '.')
-                continue;
-
-            if(dr->d_type != DT_DIR)
-                continue;
-
-            char buf[256];
-            strncpy(buf, "/mnt/", strlen("/mnt/"));
-            strncpy(buf + strlen("/mnt"), dr->d_name, sizeof(buf) - strlen("/mnt"));
-            // FIXME: handle properly instead of truncating string
-            buf[sizeof(buf) - 1] = '\0';
-            umount(buf);
-        }
-        closedir(d);
-    }
-    umount("/mnt");
+    clean_mnt_mounts();
     remove("/mnt");
 
     if(access("/multirom/boot.cpio", F_OK) < 0)

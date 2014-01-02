@@ -35,6 +35,11 @@ void multirom_refresh_partitions(void)
 {
     INFO("Scanning for partitions...");
     list_clear(&multirom_status.partitions, free_multirom_partition);
+    if(multirom_status.external_sd != NULL)
+    {
+        free(multirom_status.external_sd);
+        multirom_status.external_sd = NULL;
+    }
 
     INFO("Adding internal storage");
     // No code returns NULL in multirom_mount_internal_storage()
@@ -76,7 +81,10 @@ void multirom_refresh_partitions(void)
         {
             // FIXME: This always assumes mmcblk0 is internal emmc
             if(strncmp(curtok + strlen("mmcblk"), "0p", strlen("0p")) == 0)
+            {
+                INFO("Skipping internal emmc %s", curtok);
                 continue; // ignore internal emmc
+            }
 
             part = mzalloc(sizeof(struct multirom_partition));
             part->type = PART_EXTERNAL_SD;
@@ -87,8 +95,8 @@ void multirom_refresh_partitions(void)
             part->type = PART_EXTERNAL_USBDISK;
         }
 
-        part->block_dev = strndup(line, curtok_end - line);
-
+        part->block_dev = strdup(line);
+        part->name = strdup(curtok);
         part->mount_path = malloc(strlen("/mnt/") + strlen(curtok) + 1);
         strncpy(part->mount_path, "/mnt/", strlen("/mnt/"));
         strcpy(part->mount_path + strlen("/mnt/"), curtok);
@@ -136,13 +144,9 @@ void multirom_refresh_partitions(void)
         {
             ERROR("Found and mounted partition %s, type=%s, UUID=%s", part->name, part->fstype, part->uuid);
             list_add(part, &multirom_status.partitions);
-            if(strcmp(part->name, "mmcblk1") == 0 ||
-                strcmp(part->name, "mmcblk1p1") == 0)
-            {
-                if(multirom_status.external_sd != NULL)
-                    free(multirom_status.external_sd);
+            if(strcmp(part->name, "mmcblk1") == 0 || strcmp(part->name, "mmcblk1p1") == 0
+                && multirom_status.external_sd == NULL)
                 multirom_status.external_sd = strdup(part->mount_path);
-            }
         }
         else
         {
@@ -161,6 +165,7 @@ struct multirom_partition *multirom_mount_internal_storage(void)
         ERROR("Cannot get internal data partition.");
         return multirom_mount_fake_internal_storage();
     }
+    mkdir("/mnt/data", 0755);
     if(mount(fstab_part->device, "/mnt/data", fstab_part->type, fstab_part->mountflags, fstab_part->options) != 0)
     {
         ERROR("Cannot mount internal data partition.");
@@ -211,6 +216,7 @@ struct multirom_partition *multirom_mount_fake_internal_storage(void)
 
 int multirom_mount_partition(struct multirom_partition *part)
 {
+    mkdir(part->mount_path, 0755);
     if(mount(part->block_dev, part->mount_path, part->fstype, MS_NOATIME, "") == 0)
     {
         return 1;

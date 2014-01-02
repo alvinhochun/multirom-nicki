@@ -251,6 +251,7 @@ void multirom_ui_destroy_tab(int tab)
             break;
         case TAB_USB:
         case TAB_INTERNAL:
+        case TAB_EXT_SD:
             multirom_ui_tab_rom_destroy(themes_info->data->tab_data);
             break;
         case TAB_MISC:

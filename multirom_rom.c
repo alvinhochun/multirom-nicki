@@ -38,6 +38,7 @@
  */
 struct multirom_rom **multirom_scan_roms(struct multirom_partition *partition)
 {
+    INFO("Scanning for roms...");
     char *multirom_basepath;
     int res;
     if(partition->type == PART_INTERNAL)

@@ -90,5 +90,5 @@ enum exit_status multirom(void)
     // TODO: blah
     //multirom_emergency_reboot_recovery();
 
-    return EXIT_NORMALBOOT;
+    return exit;
 }
