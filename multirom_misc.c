@@ -50,10 +50,10 @@ void multirom_emergency_reboot_recovery(void)
         );
 
         fb_add_text(0, 7 * ISO_CHAR_HEIGHT * SIZE_NORMAL + ISO_CHAR_HEIGHT * SIZE_SMALL, GRAYISH, SIZE_SMALL, "Last lines from klog:");
-        fb_add_rect(0, 7 * ISO_CHAR_HEIGHT * SIZE_NORMAL + 2 * ISO_CHAR_HEIGHT * SIZE_SMALL - 2, fb_width, 2, GRAYISH);
+        fb_add_rect(0, 7 * ISO_CHAR_HEIGHT * SIZE_NORMAL + 2 * ISO_CHAR_HEIGHT * SIZE_SMALL, fb_width, 2, GRAYISH);
 
         char *tail = klog+strlen(klog);
-        int count = (fb_height - (7 * ISO_CHAR_HEIGHT * SIZE_NORMAL + 2 * ISO_CHAR_HEIGHT * SIZE_SMALL)) / (ISO_CHAR_HEIGHT * SIZE_SMALL);
+        int count = (fb_height - (7 * ISO_CHAR_HEIGHT * SIZE_NORMAL + 2 * ISO_CHAR_HEIGHT * SIZE_SMALL + 2)) / (ISO_CHAR_HEIGHT * SIZE_SMALL);
         while(tail > klog && count >= 0)
         {
             --tail;

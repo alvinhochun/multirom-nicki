@@ -95,10 +95,11 @@ void listview_destroy(listview *view)
     free(view);
 }
 
-listview_item *listview_add_item(listview *view, struct multirom_rom *rom, void *data)
+listview_item *listview_add_item(listview *view, struct multirom_rom *rom, struct multirom_romdata *profile, void *data)
 {
     listview_item *it = malloc(sizeof(listview_item));
     it->rom = rom;
+    it->profile = profile;
     it->data = data;
     it->flags = 0;
 
@@ -439,12 +440,14 @@ void listview_update_keyact_frame(listview *view)
 #define ROM_ITEM_H (100*DPI_MUL)
 #define ROM_TEXT_PADDING (100*DPI_MUL)
 
-rom_item_data *rom_item_create(const char *text, const char *partition)
+rom_item_data *rom_item_create(const char *rom_name, const char *rom_profile, const char *partition)
 {
-    rom_item_data *data = malloc(sizeof(rom_item_data));
-    memset(data, 0, sizeof(rom_item_data));
+    rom_item_data *data = mzalloc(sizeof(rom_item_data));
 
-    data->text = strdup(text);
+    data->rom_name = strdup(rom_name);
+    data->rom_profile = malloc(strlen(rom_profile) + 2);
+    data->rom_profile[0] = '>';
+    strcpy(data->rom_profile + 1, rom_profile);
     if(partition)
         data->partition = strdup(partition);
     return data;
@@ -453,9 +456,10 @@ rom_item_data *rom_item_create(const char *text, const char *partition)
 void rom_item_draw(int x, int y, int w, listview_item *it)
 {
     rom_item_data *d = (rom_item_data*)it->data;
-    if(!d->text_it)
+    if(!d->rom_name_it)
     {
-        d->text_it = fb_add_text(x+ROM_TEXT_PADDING, 0, WHITE, SIZE_BIG, d->text);
+        d->rom_name_it = fb_add_text(x+ROM_TEXT_PADDING, 0, WHITE, SIZE_NORMAL, d->rom_name);
+        d->rom_profile_it = fb_add_text(x+ROM_TEXT_PADDING, 0, WHITE, SIZE_NORMAL, d->rom_profile);
         d->bottom_line = fb_add_rect(x, 0, w, 1, 0xFF1B1B1B);
         d->box = checkbox_create(0, 0, NULL);
 
@@ -463,11 +467,12 @@ void rom_item_draw(int x, int y, int w, listview_item *it)
             d->part_it = fb_add_text(x+ROM_TEXT_PADDING, 0, GRAY, SIZE_SMALL, d->partition);
     }
 
-    d->text_it->head.y = center_y(y, ROM_ITEM_H, SIZE_BIG);
+    d->rom_name_it->head.y = center_y(y, (ROM_ITEM_H - ISO_CHAR_HEIGHT * SIZE_SMALL * 2) / 2, SIZE_NORMAL);
+    d->rom_profile_it->head.y = d->rom_name_it->head.y + (ROM_ITEM_H - ISO_CHAR_HEIGHT * SIZE_SMALL * 2) / 2;
     d->bottom_line->head.y = y+ROM_ITEM_H-2;
 
     if(d->part_it)
-        d->part_it->head.y = d->text_it->head.y + SIZE_BIG*16 + 2;
+        d->part_it->head.y = y + ROM_ITEM_H - ISO_CHAR_HEIGHT * SIZE_SMALL * 3 / 2;
 
     if(it->flags & IT_HOVER)
     {
@@ -488,17 +493,19 @@ void rom_item_draw(int x, int y, int w, listview_item *it)
 void rom_item_hide(void *data)
 {
     rom_item_data *d = (rom_item_data*)data;
-    if(!d->text_it)
+    if(!d->rom_name_it)
         return;
 
-    fb_rm_text(d->text_it);
+    fb_rm_text(d->rom_name_it);
+    fb_rm_text(d->rom_profile_it);
     fb_rm_text(d->part_it);
     fb_rm_rect(d->bottom_line);
     fb_rm_rect(d->hover_rect);
 
     checkbox_destroy(d->box);
 
-    d->text_it = NULL;
+    d->rom_name_it = NULL;
+    d->rom_profile_it = NULL;
     d->part_it = NULL;
     d->bottom_line = NULL;
     d->hover_rect = NULL;
@@ -514,7 +521,8 @@ void rom_item_destroy(listview_item *it)
 {
     rom_item_hide(it->data);
     rom_item_data *d = (rom_item_data*)it->data;
-    free(d->text);
+    free(d->rom_name);
+    free(d->rom_profile);
     free(d->partition);
     free(it->data);
     free(it);

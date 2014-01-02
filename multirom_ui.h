@@ -62,7 +62,7 @@ enum
 extern uint32_t CLR_PRIMARY;
 extern uint32_t CLR_SECONDARY;
 
-int multirom_ui(struct multirom_rom **to_boot);
+int multirom_ui(struct multirom_rom **to_boot, struct multirom_romdata **boot_profile);
 void multirom_ui_init_header(void);
 void multirom_ui_header_select(int tab);
 void multirom_ui_destroy_tab(int tab);

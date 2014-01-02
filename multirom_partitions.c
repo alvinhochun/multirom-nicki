@@ -144,7 +144,7 @@ void multirom_refresh_partitions(void)
         {
             ERROR("Found and mounted partition %s, type=%s, UUID=%s", part->name, part->fstype, part->uuid);
             list_add(part, &multirom_status.partitions);
-            if(strcmp(part->name, "mmcblk1") == 0 || strcmp(part->name, "mmcblk1p1") == 0
+            if((strcmp(part->name, "mmcblk1") == 0 || strcmp(part->name, "mmcblk1p1") == 0)
                 && multirom_status.external_sd == NULL)
                 multirom_status.external_sd = strdup(part->mount_path);
         }

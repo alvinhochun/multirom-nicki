@@ -56,6 +56,8 @@ void free_multirom_romdata(struct multirom_romdata *p)
     case ROMDATA_TYPE_ANDROID_IMG:
         free_multirom_romdata_android_img(p->android_img);
         break;
+    default:
+        break;
     }
     free(p);
 }
@@ -73,6 +75,8 @@ void free_multirom_rom(struct multirom_rom *p)
     {
     case ROM_TYPE_ANDROID_IMG:
         free_multirom_rom_android_img(p->android_img);
+        break;
+    default:
         break;
     }
     free(p);

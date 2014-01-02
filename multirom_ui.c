@@ -41,6 +41,7 @@
 
 //static struct multirom_status *mrom_status = NULL;
 static struct multirom_rom *selected_rom = NULL;
+static struct multirom_romdata *selected_profile = NULL;
 static volatile int exit_ui_code = -1;
 static fb_msgbox *active_msgbox = NULL;
 static volatile int loop_act = 0;
@@ -56,7 +57,7 @@ uint32_t CLR_SECONDARY = LBLUE2;
 #define LOOP_START_PONG 0x02
 #define LOOP_CHANGE_CLR 0x04
 
-int multirom_ui(struct multirom_rom **to_boot)
+int multirom_ui(struct multirom_rom **to_boot, struct multirom_romdata **boot_profile)
 {
     if(multirom_init_fb(0) < 0)
         return UI_EXIT_BOOT_ROM;
@@ -65,6 +66,7 @@ int multirom_ui(struct multirom_rom **to_boot)
 
     exit_ui_code = -1;
     selected_rom = NULL;
+    selected_profile = NULL;
     active_msgbox = NULL;
 
     multirom_ui_setup_colors(multirom_status.pref.color, &CLR_PRIMARY, &CLR_SECONDARY);
@@ -172,8 +174,10 @@ int multirom_ui(struct multirom_rom **to_boot)
     {
         case UI_EXIT_BOOT_ROM:
             *to_boot = selected_rom;
+            *boot_profile = selected_profile;
             fb_msgbox_add_text(-1, 40*DPI_MUL, SIZE_BIG, "Booting ROM...");
             fb_msgbox_add_text(-1, -1, SIZE_NORMAL, selected_rom->name);
+            fb_msgbox_add_text(-1, -1, SIZE_NORMAL, selected_profile->name);
             break;
         case UI_EXIT_REBOOT:
         case UI_EXIT_REBOOT_RECOVERY:
@@ -314,9 +318,12 @@ void multirom_ui_fill_rom_list(listview *view, enum multirom_partition_type part
         // TODO: Support hiding internal...?
         //if(rom->type == ROM_DEFAULT && mrom_status->hide_internal)
         //    continue;
-
-        data = rom_item_create(rom->name, part_desc);
-        it = listview_add_item(view, rom, data);
+        struct multirom_romdata **profile;
+        for(profile = rom->romdata_list; profile != NULL && *profile != NULL; profile++)
+        {
+            data = rom_item_create(rom->name, (*profile)->name, part_desc);
+            it = listview_add_item(view, rom, *profile, data);
+        }
 
         // TODO: autoboot support
         /*if ((mrom_status->auto_boot_rom && rom == mrom_status->auto_boot_rom) ||
@@ -501,6 +508,7 @@ void multirom_ui_tab_rom_destroy(tab_data_roms *data)
     listview_destroy(t->list);
 
     fb_rm_text(t->rom_name);
+    fb_rm_text(t->rom_profile);
 
     if(t->usb_prog)
         progdots_destroy(t->usb_prog);
@@ -511,16 +519,19 @@ void multirom_ui_tab_rom_destroy(tab_data_roms *data)
 void multirom_ui_tab_rom_selected(listview_item *prev, listview_item *now)
 {
     struct multirom_rom *rom = now->rom;
-    if(!rom || !themes_info->data->tab_data)
+    struct multirom_romdata *profile = now->profile;
+    if(rom == NULL || profile == NULL || themes_info->data->tab_data == NULL)
         return;
 
     tab_data_roms *t = (tab_data_roms*)themes_info->data->tab_data;
 
     free(t->rom_name->text);
-    t->rom_name->text = malloc(strlen(rom->name)+1);
-    strcpy(t->rom_name->text, rom->name);
+    t->rom_name->text = strdup(rom->name);
 
-    cur_theme->center_rom_name(t, rom->name);
+    free(t->rom_profile->text);
+    t->rom_profile->text = strdup(profile->name);
+
+    cur_theme->center_rom_name(t, rom->name, profile->name);
 
     fb_draw();
 }
@@ -539,8 +550,9 @@ void multirom_ui_tab_rom_boot_btn(int action)
     if(!t->list->selected)
         return;
 
-    struct multirom_rom *rom =t->list->selected->rom;
-    if(!rom)
+    struct multirom_rom *rom = t->list->selected->rom;
+    struct multirom_romdata *profile = t->list->selected->profile;
+    if(rom == NULL || profile == NULL)
         return;
 
 #if 0
@@ -593,6 +605,7 @@ void multirom_ui_tab_rom_boot_btn(int action)
 
     pthread_mutex_lock(&exit_code_mutex);
     selected_rom = rom;
+    selected_profile = profile;
     exit_ui_code = UI_EXIT_BOOT_ROM;
     pthread_mutex_unlock(&exit_code_mutex);
 }

@@ -15,6 +15,8 @@
  * along with MultiROM.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdio.h>
+
 #include "../multirom_ui.h"
 #include "../multirom_ui_themes.h"
 #include "../framebuffer.h"
@@ -121,7 +123,9 @@ static void tab_rom_init(multirom_theme_data *t, tab_data_roms *d, int tab_type)
 {
     int footer_y = fb_height - ROMS_FOOTER_H;
 
-    d->rom_name = fb_add_text(0, center_y(footer_y, ROMS_FOOTER_H, SIZE_NORMAL),
+    d->rom_name = fb_add_text(0, footer_y + ROMS_FOOTER_H / 2 - ISO_CHAR_HEIGHT * SIZE_NORMAL,
+                              WHITE, SIZE_NORMAL, "");
+    d->rom_profile = fb_add_text(0, footer_y + ROMS_FOOTER_H / 2,
                               WHITE, SIZE_NORMAL, "");
 
     d->list->y = HEADER_HEIGHT + ROMS_HEADER_H;
@@ -246,11 +250,15 @@ static int get_tab_height(multirom_theme_data *t)
     return fb_height - HEADER_HEIGHT;
 }
 
-static void center_rom_name(tab_data_roms *d, const char *name)
+static void center_rom_name(tab_data_roms *d, const char *name, const char *profile)
 {
     d->rom_name->head.x = center_x(0, fb_width - BOOTBTN_W - 20, SIZE_NORMAL, name);
     if(d->rom_name->head.x < 0)
         d->rom_name->head.x = 0;
+
+    d->rom_profile->head.x = center_x(0, fb_width - BOOTBTN_W - 20, SIZE_NORMAL, profile);
+    if(d->rom_profile->head.x < 0)
+        d->rom_profile->head.x = 0;
 }
 
 const struct multirom_theme theme_info_portrait = {

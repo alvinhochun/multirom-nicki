@@ -63,7 +63,8 @@ enum exit_status multirom(void)
     }
 
     struct multirom_rom *to_boot;
-    int ui_exit = multirom_ui(&to_boot);
+    struct multirom_romdata *boot_profile;
+    int ui_exit = multirom_ui(&to_boot, &boot_profile);
 
     int exit = EXIT_REBOOT_RECOVERY;
 
@@ -72,11 +73,11 @@ enum exit_status multirom(void)
         case UI_EXIT_BOOT_ROM:
             // TODO: prepare for boot
             //exit = multirom_prepare_boot(to_boot);
-            if(to_boot->type == ROM_TYPE_ANDROID_INT)
+            if(to_boot->type == ROM_TYPE_ANDROID_INT && boot_profile->type == ROMDATA_TYPE_ANDROID_INT)
                 exit = EXIT_NORMALBOOT;
             else
             {
-                ERROR("Not implemented!");
+                ERROR("Function not implemented!");
                 multirom_emergency_reboot_recovery();
             }
             break;

@@ -34,6 +34,7 @@ typedef struct
     button **buttons;
     void **ui_elements;
     fb_text *rom_name;
+    fb_text *rom_profile;
     fb_text *title_text;
     fb_text *usb_text;
     button *boot_btn;
@@ -67,7 +68,7 @@ struct multirom_theme
     void (*tab_misc_init)(multirom_theme_data *t, tab_data_misc *d, int color_scheme);
     int (*get_tab_width)(multirom_theme_data *t);
     int (*get_tab_height)(multirom_theme_data *t);
-    void (*center_rom_name)(tab_data_roms *d, const char *rom_name);
+    void (*center_rom_name)(tab_data_roms *d, const char *rom_name, const char *rom_profile);
 };
 typedef struct multirom_theme multirom_theme;
 
