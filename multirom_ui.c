@@ -166,7 +166,7 @@ int multirom_ui(struct multirom_rom **to_boot)
 
     rm_touch_handler(&multirom_ui_touch_handler, NULL);
 
-    fb_create_msgbox(500*DPI_MUL, 250*DPI_MUL, CLR_PRIMARY);
+    fb_create_msgbox(416*DPI_MUL, 250*DPI_MUL, CLR_PRIMARY);
 
     switch(exit_ui_code)
     {
@@ -370,11 +370,11 @@ void multirom_ui_auto_boot(void)
     // TODO: autoboot support
 #if 0
     int seconds = mrom_status->auto_boot_seconds*1000;
-    active_msgbox = fb_create_msgbox(500*DPI_MUL, 300*DPI_MUL, CLR_PRIMARY);
+    active_msgbox = fb_create_msgbox(416*DPI_MUL, 300*DPI_MUL, CLR_PRIMARY);
 
     fb_msgbox_add_text(-1, 40*DPI_MUL, SIZE_BIG, "Auto-boot");
     fb_msgbox_add_text(-1, active_msgbox->h-100*DPI_MUL, SIZE_NORMAL, "%s", mrom_status->auto_boot_rom->name);
-    fb_msgbox_add_text(-1, active_msgbox->h-60*DPI_MUL, SIZE_NORMAL, "Touch anywhere to cancel");
+    fb_msgbox_add_text(-1, active_msgbox->h-60*DPI_MUL, SIZE_NORMAL, "Touch to cancel");
 
     fb_text *sec_text = fb_msgbox_add_text(-1, -1, SIZE_BIG, "%d", seconds/1000);
 
@@ -547,11 +547,11 @@ void multirom_ui_tab_rom_boot_btn(int action)
     int m = M(rom->type);
     if(m & MASK_UNSUPPORTED)
     {
-        active_msgbox = fb_create_msgbox(550*DPI_MUL, 360*DPI_MUL, DRED);
+        active_msgbox = fb_create_msgbox(416*DPI_MUL, 360*DPI_MUL, DRED);
         fb_msgbox_add_text(-1, 30*DPI_MUL, SIZE_BIG, "Error");
         fb_msgbox_add_text(-1, 90*DPI_MUL, SIZE_NORMAL, "Unsupported ROM type.");
-        fb_msgbox_add_text(-1, 180*DPI_MUL, SIZE_NORMAL, "See XDA thread for more info.");
-        fb_msgbox_add_text(-1, active_msgbox->h-60*DPI_MUL, SIZE_NORMAL, "Touch anywhere to close");
+        fb_msgbox_add_text(-1, 180*DPI_MUL, SIZE_NORMAL, "Please see XDA thread.");
+        fb_msgbox_add_text(-1, active_msgbox->h-60*DPI_MUL, SIZE_NORMAL, "Touch to close");
 
         fb_draw();
         fb_freeze(1);
@@ -562,13 +562,13 @@ void multirom_ui_tab_rom_boot_btn(int action)
     if(rom->type == ROM_TYPE_ANDROID_IMG && rom->android_img->kernel_path != NULL &&
         multirom_has_kexec() != 0)
     {
-        active_msgbox = fb_create_msgbox(550*DPI_MUL, 360*DPI_MUL, DRED);
+        active_msgbox = fb_create_msgbox(416*DPI_MUL, 360*DPI_MUL, DRED);
         fb_msgbox_add_text(-1, 30*DPI_MUL, SIZE_BIG, "Error");
-        fb_msgbox_add_text(-1, 90*DPI_MUL, SIZE_NORMAL, "Kexec-hardboot support");
+        fb_msgbox_add_text(-1, 90*DPI_MUL, SIZE_NORMAL, "Kexec-hardboot support is");
         fb_msgbox_add_text(-1, 125*DPI_MUL, SIZE_NORMAL, "required to boot this ROM.");
-        fb_msgbox_add_text(-1, 180*DPI_MUL, SIZE_NORMAL, "Use kernel with");
+        fb_msgbox_add_text(-1, 180*DPI_MUL, SIZE_NORMAL, "Please Use kernel with");
         fb_msgbox_add_text(-1, 215*DPI_MUL, SIZE_NORMAL, "kexec-hardboot support.");
-        fb_msgbox_add_text(-1, active_msgbox->h-60*DPI_MUL, SIZE_NORMAL, "Touch anywhere to close");
+        fb_msgbox_add_text(-1, active_msgbox->h-60*DPI_MUL, SIZE_NORMAL, "Touch to close");
 
         fb_draw();
         fb_freeze(1);
@@ -578,11 +578,11 @@ void multirom_ui_tab_rom_boot_btn(int action)
 #if 0
     if((m & MASK_KEXEC) && strchr(rom->name, ' '))
     {
-        active_msgbox = fb_create_msgbox(550*DPI_MUL, 360*DPI_MUL, DRED);
+        active_msgbox = fb_create_msgbox(416*DPI_MUL, 360*DPI_MUL, DRED);
         fb_msgbox_add_text(-1, 30*DPI_MUL, SIZE_BIG, "Error");
-        fb_msgbox_add_text(-1, 90*DPI_MUL, SIZE_NORMAL, "ROM's name contains spaces");
-        fb_msgbox_add_text(-1, 180*DPI_MUL, SIZE_NORMAL, "Remove spaces from ROM's name");
-        fb_msgbox_add_text(-1, active_msgbox->h-60*DPI_MUL, SIZE_NORMAL, "Touch anywhere to close");
+        fb_msgbox_add_text(-1, 90*DPI_MUL, SIZE_NORMAL, "ROM name contains spaces");
+        fb_msgbox_add_text(-1, 180*DPI_MUL, SIZE_NORMAL, "Please remove spaces");
+        fb_msgbox_add_text(-1, active_msgbox->h-60*DPI_MUL, SIZE_NORMAL, "Touch to close");
 
         fb_draw();
         fb_freeze(1);
@@ -627,7 +627,7 @@ void multirom_ui_tab_rom_set_empty(tab_data_roms *data, int empty, int tab_type)
     tab_data_roms *t = data;
     int width = cur_theme->get_tab_width(themes_info->data);
 
-    static const char *str[] = { "Select ROM to boot:", "No ROMs in this location!" };
+    static const char *str[] = { "Select boot ROM:", "No ROMs are found!" };
     t->title_text->head.x = center_x(t->list->x, width, SIZE_BIG, str[empty]);
     t->title_text->text = realloc(t->title_text->text, strlen(str[empty])+1);
     strcpy(t->title_text->text, str[empty]);
@@ -637,8 +637,8 @@ void multirom_ui_tab_rom_set_empty(tab_data_roms *data, int empty, int tab_type)
 
     if(empty && tab_type == TAB_USB && !t->usb_text)
     {
-        const int line_len = 37;
-        static const char *txt = "This list is refreshed automagically,\njust plug in the USB drive and  wait.";
+        const int line_len = 29;
+        static const char *txt = "Please plug in the USB drive.\nThis list will update itself.";
         int x = t->list->x + (width/2 - (line_len*ISO_CHAR_WIDTH*SIZE_NORMAL)/2);
         int y = center_y(t->list->y, t->list->h, SIZE_NORMAL);
         t->usb_text = fb_add_text(x, y, WHITE, SIZE_NORMAL, txt);
@@ -698,9 +698,9 @@ void multirom_ui_tab_misc_copy_log(int action)
 
     int res = multirom_copy_log(NULL);
 
-    static const char *text[] = { "Failed to copy log to sdcard!", "Successfully copied error log!" };
+    static const char *text[] = { "Failed!", "Success!" };
 
-    active_msgbox = fb_create_msgbox(550*DPI_MUL, 260*DPI_MUL, res ? DRED : CLR_PRIMARY);
+    active_msgbox = fb_create_msgbox(416*DPI_MUL, 260*DPI_MUL, res ? DRED : CLR_PRIMARY);
     fb_msgbox_add_text(-1, 50*DPI_MUL, SIZE_NORMAL, (char*)text[res+1]);
     if(res == 0)
         fb_msgbox_add_text(-1, -1, SIZE_NORMAL, "sdcard/multirom_error.txt");

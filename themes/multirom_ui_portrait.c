@@ -58,7 +58,7 @@ static void init_header(multirom_theme_data *t)
 
     int i, tab_x, tab_width;
 
-    static const char *header = "MultiROM";
+    static const char *header = "MultiROM for Xperia M/M Dual";
     static const char *tabs[TAB_COUNT] = { "Internal", "microSD", "USB", "Misc" };
 
     fb_add_text(PADDING_S, PADDING_S, WHITE, SIZE_NORMAL, header);
@@ -160,7 +160,7 @@ static void tab_misc_init(multirom_theme_data *t, tab_data_misc *d, int color_sc
     button_init_ui(b, "Copy log to /sdcard", SIZE_NORMAL);
     list_add(b, &d->buttons);
 
-    y += MISCBTN_H+70*DPI_MUL;
+    y += MISCBTN_H + PADDING_L * 3;
 
     static const struct {
         const int exit_code;
@@ -186,7 +186,7 @@ static void tab_misc_init(multirom_theme_data *t, tab_data_misc *d, int color_sc
         button_init_ui(b, cmds[i].text, SIZE_BIG);
         list_add(b, &d->buttons);
 
-        y += MISCBTN_H + PADDING_L * 2;
+        y += MISCBTN_H + PADDING_L;
     }
 
     fb_text *text = fb_add_text(0, fb_height - ISO_CHAR_HEIGHT * SIZE_SMALL, WHITE, SIZE_SMALL, "MultiROM v%d"VERSION_DEV_FIX" with trampoline v%d.",

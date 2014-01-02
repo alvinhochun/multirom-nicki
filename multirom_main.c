@@ -72,7 +72,13 @@ enum exit_status multirom(void)
         case UI_EXIT_BOOT_ROM:
             // TODO: prepare for boot
             //exit = multirom_prepare_boot(to_boot);
-            exit = EXIT_NORMALBOOT;
+            if(to_boot->type == ROM_TYPE_ANDROID_INT)
+                exit = EXIT_NORMALBOOT;
+            else
+            {
+                ERROR("Not implemented!");
+                multirom_emergency_reboot_recovery();
+            }
             break;
         case UI_EXIT_REBOOT:
             exit = EXIT_REBOOT;
