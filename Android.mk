@@ -36,8 +36,8 @@ LOCAL_MODULE:= multirom
 LOCAL_MODULE_TAGS := eng
 
 LOCAL_FORCE_STATIC_EXECUTABLE := true
-LOCAL_MODULE_PATH := $(TARGET_ROOT_OUT)
-LOCAL_UNSTRIPPED_PATH := $(TARGET_ROOT_OUT_UNSTRIPPED)
+LOCAL_MODULE_PATH := $(PRODUCT_OUT)/multirom
+#LOCAL_UNSTRIPPED_PATH := $(TARGET_ROOT_OUT_UNSTRIPPED)
 
 LOCAL_STATIC_LIBRARIES := libcutils libc libm
 
@@ -155,4 +155,7 @@ include $(BUILD_EXECUTABLE)
 include $(multirom_local_path)/trampoline/Android.mk
 
 # ZIP installer
-include $(multirom_local_path)/install_zip/Android.mk
+#include $(multirom_local_path)/install_zip/Android.mk
+
+# Reboot binary
+include $(multirom_local_path)/reboot/Android.mk
