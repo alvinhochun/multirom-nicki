@@ -128,7 +128,7 @@ struct multirom_rom *multirom_parse_rom_entry(const char *multirom_basepath, con
     rom->name = strdup(rom_name);
     rom->partition = partition;
 
-    if(partition->type == PART_INTERNAL && strcmp(rom_name, "internal") == 0)
+    if(strcmp(rom_name, "internal") == 0)
     {
         rom->type = ROM_TYPE_ANDROID_INT;
     }
@@ -199,7 +199,7 @@ struct multirom_rom *multirom_parse_rom_entry(const char *multirom_basepath, con
         goto fail;
     }
 
-    rom->romdata_list = multirom_scan_romdata(rom_basepath, rom->type);
+    rom->romdata_list = multirom_scan_romdata(rom_basepath, rom->type, partition->type == PART_INTERNAL);
     if(list_item_count(rom->romdata_list) <= 0)
     {
         ERROR("No ROM profiles for %s!", rom_basepath);
@@ -353,7 +353,7 @@ done:
     return data;
 }
 
-struct multirom_romdata **multirom_scan_romdata(const char *rom_basepath, enum multirom_rom_type rom_type)
+struct multirom_romdata **multirom_scan_romdata(const char *rom_basepath, enum multirom_rom_type rom_type, int is_internal)
 {
     int res;
     struct multirom_romdata **romdata_list = NULL;
@@ -375,7 +375,7 @@ struct multirom_romdata **multirom_scan_romdata(const char *rom_basepath, enum m
         if(dr->d_type != DT_DIR)
             continue;
 
-        struct multirom_romdata *romdata = multirom_parse_romdata_entry(rom_basepath, dr->d_name, rom_type);
+        struct multirom_romdata *romdata = multirom_parse_romdata_entry(rom_basepath, dr->d_name, rom_type, is_internal);
         if(romdata == NULL)
             continue;
 
@@ -386,7 +386,7 @@ struct multirom_romdata **multirom_scan_romdata(const char *rom_basepath, enum m
     closedir(d);
 
     // Add internal
-    if(ROMTYPE_FMT(rom_type) == ROMTYPE_FMT_INT && !has_internal)
+    if(is_internal && !has_internal)
     {
         ERROR("Internal ROM internal profile entry not found, attempting to create it...");
         struct multirom_romdata *romdata = multirom_create_internal_data_entry(rom_basepath);
@@ -408,7 +408,7 @@ done:
     return romdata_list;
 }
 
-struct multirom_romdata *multirom_parse_romdata_entry(const char *rom_basepath, const char *data_name, enum multirom_rom_type rom_type)
+struct multirom_romdata *multirom_parse_romdata_entry(const char *rom_basepath, const char *data_name, enum multirom_rom_type rom_type, int is_internal)
 {
     struct multirom_romdata *romdata = NULL;
     char *romdata_basepath = NULL;
@@ -424,7 +424,13 @@ struct multirom_romdata *multirom_parse_romdata_entry(const char *rom_basepath, 
 
     if(ROMTYPE_FMT(rom_type) == ROMTYPE_FMT_INT && strcmp(data_name, "internal") == 0)
     {
-        romdata->type = ROMDATA_TYPE_ANDROID_INT;
+        if(is_internal)
+            romdata->type = ROMDATA_TYPE_ANDROID_INT;
+        else
+        {
+            ERROR("\"internal\" profile on %s is ignored", rom_basepath);
+            goto fail;
+        }
     }
     else
     {
