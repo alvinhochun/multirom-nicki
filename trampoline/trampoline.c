@@ -235,12 +235,9 @@ int main(int argc, char *argv[])
         fstab = fstab_auto_load();
         if(should_enter_recovery(fstab))
         {
-            ERROR("Entering recovery, extracting recovery.gz to boot.cpio...");
-            int status = shell_cmd("/multirom/busybox zcat /multirom/recovery.gz > /multirom/boot.cpio");
-            if(status != 0)
-            {
-                ERROR("Cannot extract recovery.gz! Status %d", status);
-            }
+            ERROR("Entering recovery, replacing boot.cpio with recovery.cpio...");
+            remove("/multirom/boot.cpio");
+            rename("/multirom/recovery.cpio", "/multirom/boot.cpio");
         }
         else if(fstab)
         {
@@ -250,10 +247,6 @@ int main(int argc, char *argv[])
             if(wait_for_file("/dev/graphics/fb0", 5) >= 0)
             {
                 adb_init(path_multirom);
-                /*while(access("/multirom/blah", F_OK) < 0)
-                    usleep(1000000);*/
-                //sleep(20);
-                //remove("/multirom/blah");
                 run_multirom();
                 adb_quit();
             }
@@ -277,16 +270,6 @@ int main(int argc, char *argv[])
     clean_mnt_mounts();
     remove("/mnt");
 
-    if(access("/multirom/boot.cpio", F_OK) < 0)
-    {
-        ERROR("Extracting boot.gz to boot.cpio...");
-        int status = shell_cmd("/multirom/busybox zcat /multirom/boot.gz > /multirom/boot.cpio");
-        if(status != 0)
-        {
-            ERROR("Cannot extract boot.gz! Status %d", status);
-        }
-    }
-
     umount("/dev/pts");
     rmdir("/dev/pts");
     rmdir("/dev/socket");
@@ -302,8 +285,6 @@ int main(int argc, char *argv[])
     remove("/multirom/multirom");
     remove("/multirom/adbd");
     remove("/multirom/kexec");
-    remove("/multirom/recovery.gz");
-    remove("/multirom/boot.gz");
 
     ERROR("extracting boot.cpio...");
     int status = shell_cmd("cd /; /multirom/busybox cpio -i < /multirom/boot.cpio");
