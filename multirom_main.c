@@ -66,7 +66,7 @@ enum exit_status multirom(void)
     struct multirom_romdata *boot_profile;
     int ui_exit = multirom_ui(&to_boot, &boot_profile);
 
-    int exit = EXIT_REBOOT_RECOVERY;
+    enum exit_status exit = EXIT_REBOOT_RECOVERY;
 
     switch(ui_exit)
     {
@@ -85,7 +85,15 @@ enum exit_status multirom(void)
             exit = EXIT_REBOOT;
             break;
         case UI_EXIT_REBOOT_RECOVERY:
+//#if MR_COMBINEDROOT
+#if 1
+            ERROR("Entering recovery, replacing boot.cpio with recovery.cpio...");
+            remove("/multirom/boot.cpio");
+            rename("/multirom/recovery.cpio", "/multirom/boot.cpio");
+            exit = EXIT_NORMALBOOT;
+#else
             exit = EXIT_REBOOT_RECOVERY;
+#endif
             break;
         case UI_EXIT_REBOOT_BOOTLOADER:
             exit = EXIT_REBOOT_BOOTLOADER;
@@ -94,8 +102,6 @@ enum exit_status multirom(void)
             exit = EXIT_POWEROFF;
             break;
     }
-    // TODO: blah
-    //multirom_emergency_reboot_recovery();
 
     return exit;
 }
