@@ -35,6 +35,10 @@ enum exit_status
     EXIT_REBOOT_MASK         = (EXIT_REBOOT | EXIT_REBOOT_RECOVERY | EXIT_REBOOT_BOOTLOADER | EXIT_POWEROFF),
 };
 
+#include "multirom_rom.h"
+
 enum exit_status multirom(void);
+enum exit_status multirom_prepare_boot(struct multirom_rom *to_boot, struct multirom_romdata *boot_profile);
+enum exit_status multirom_prepare_android_img(struct multirom_partition *part, struct multirom_rom_android_img *system, struct multirom_romdata_android_img *data);
 
 #endif /* MULTIROM_MAIN_H_ */

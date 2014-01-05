@@ -180,9 +180,13 @@ int multirom_ui(struct multirom_rom **to_boot, struct multirom_romdata **boot_pr
             fb_msgbox_add_text(-1, 40*DPI_MUL + ISO_CHAR_HEIGHT * (SIZE_BIG * 2 + SIZE_NORMAL), SIZE_NORMAL, selected_profile->name);
             break;
         case UI_EXIT_REBOOT:
-        case UI_EXIT_REBOOT_RECOVERY:
-        case UI_EXIT_REBOOT_BOOTLOADER:
             fb_msgbox_add_text(-1, -1, SIZE_BIG, "Rebooting...");
+            break;
+        case UI_EXIT_REBOOT_RECOVERY:
+            fb_msgbox_add_text(-1, -1, SIZE_BIG, "Recovery...");
+            break;
+        case UI_EXIT_REBOOT_BOOTLOADER:
+            fb_msgbox_add_text(-1, -1, SIZE_BIG, "Bootloader...");
             break;
         case UI_EXIT_POWEROFF:
             fb_msgbox_add_text(-1, -1, SIZE_BIG, "Shutting down...");
