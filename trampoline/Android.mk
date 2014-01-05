@@ -9,7 +9,7 @@ LOCAL_SRC_FILES:= \
     adb.c \
     ../fstab.c
 
-LOCAL_MODULE:= trampoline
+LOCAL_MODULE:= multirom_trampoline
 LOCAL_MODULE_TAGS := eng
 
 LOCAL_FORCE_STATIC_EXECUTABLE := true

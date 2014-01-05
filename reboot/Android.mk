@@ -3,7 +3,7 @@ include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES := reboot.c
 
-LOCAL_MODULE := reboot
+LOCAL_MODULE := multirom_reboot
 LOCAL_MODULE_TAGS := eng
 
 LOCAL_FORCE_STATIC_EXECUTABLE := true
