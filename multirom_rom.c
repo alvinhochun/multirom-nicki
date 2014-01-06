@@ -293,6 +293,36 @@ struct multirom_rom_android_img *multirom_rom_android_img_parse(const char *romd
         }
         data->kernel_path = imgpath;
         imgpath = NULL;
+
+        res = asprintf(&imgpath, "%s/cmdline", romdata_basepath);
+        if(res < 0)
+            goto fail;
+        FILE *f = fopen(imgpath, "r");
+        if(f == NULL)
+        {
+            ERROR("Cannot read %s!", imgpath);
+            goto fail;
+        }
+        fseek(f, 0, SEEK_END);
+        size_t size = ftell(f);
+        rewind(f);
+        data->cmdline = malloc(size + 2);
+        data->cmdline[0] = '\0';
+        fgets(data->cmdline, size + 1, f);
+        fclose(f);
+        size_t l = strlen(data->cmdline);
+        if(l != 0)
+        {
+            if(data->cmdline[l - 1] == '\n')
+            {
+                data->cmdline[l - 1] = ' ';
+            }
+            else
+            {
+                data->cmdline[l] = ' ';
+                data->cmdline[l + 1] = '\0';
+            }
+        }
     }
 
     res = asprintf(&imgpath, "%s/ramdisk.gz", romdata_basepath);

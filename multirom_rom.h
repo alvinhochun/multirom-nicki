@@ -45,6 +45,7 @@ enum multirom_rom_type
 struct multirom_rom_android_img
 {
     char *kernel_path;      // can be NULL, not NULL == kexec
+    char *cmdline;          // if kernel_path is not null, this must not be null
     char *ramdisk_path;
     char *system_path;
     char *firmware_path;    // can be NULL

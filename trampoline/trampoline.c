@@ -281,6 +281,7 @@ int main(int argc, char *argv[])
     rmdir("/sys");
 
     remove("/init");
+    remove("/multirom/recovery.cpio");
     remove("/multirom/fstab");
     remove("/multirom/multirom");
     remove("/multirom/adbd");

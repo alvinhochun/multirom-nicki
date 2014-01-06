@@ -286,13 +286,60 @@ enum exit_status multirom_prepare_android_img(struct multirom_partition *part, s
 
     if(sys != NULL && sys->kernel_path != NULL)
     {
-        // TODO: kexec
-        ERROR("kexec not supported");
-        goto fail;
-        return EXIT_KEXEC;
+        char *bl_cmdline = multirom_get_bootloader_cmdline();
+        if(bl_cmdline == NULL)
+        {
+            ERROR("Cannot get bootloader cmdline");
+            goto fail;
+        }
+        size_t l1 = strlen(sys->cmdline);
+        size_t l2 = strlen(bl_cmdline);
+        char *new_cmdline = malloc(l1 + l2 + 1);
+        strncpy(new_cmdline, sys->cmdline, l1);
+        strcpy(new_cmdline + l1, bl_cmdline);
+        enum exit_status res = multirom_prepare_kexec(sys->kernel_path, "/multirom/boot.cpio", new_cmdline);
+        free(new_cmdline);
+        return res;
     }
     else
         return EXIT_NORMALBOOT;
 fail:
     multirom_emergency_reboot_recovery();
+}
+
+enum exit_status multirom_prepare_kexec(const char *kernel_path, const char *ramdisk, const char *cmdline)
+{
+    char *arg_ramdisk = malloc(strlen("--initrd=") + strlen(ramdisk) + 1);
+    char *arg_cmdline = malloc(strlen("--command-line=") + strlen(cmdline) + 1);
+    char *cmd[] = {
+        "/multirom/kexec",               // 0
+        "--load-hardboot",               // 1
+        kernel_path,                     // 2 - path to zImage
+        "--mem-min="MR_KEXEC_MEM_MIN,    // 3
+        arg_ramdisk,                     // 4 - --initrd=<path to initrd>
+        arg_cmdline,                     // 5 - --command-line=<cmdline>
+#ifdef MR_KEXEC_DTB
+        "--dtb",                         // 6
+#endif
+        NULL
+    };
+    strcpy(arg_ramdisk, "--initrd=");
+    strcat(arg_ramdisk, ramdisk);
+    strcpy(arg_cmdline, "--command-line=");
+    strcat(arg_cmdline, cmdline);
+
+    ERROR("Loading kexec with args:");
+    char **ptr;
+    for(ptr = cmd; *ptr != NULL; ptr++)
+        ERROR("%s", *ptr);
+
+    if(run_cmd(cmd) == 0)
+    {
+        return EXIT_KEXEC;
+    }
+    else
+    {
+        ERROR("Loading kexec failed");
+        multirom_emergency_reboot_recovery();
+    }
 }

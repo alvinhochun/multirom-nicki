@@ -30,6 +30,7 @@ void free_multirom_rom_android_img(struct multirom_rom_android_img *p)
     if(p == NULL)
         return;
     free(p->kernel_path);
+    free(p->cmdline);
     free(p->ramdisk_path);
     free(p->system_path);
     free(p->firmware_path);

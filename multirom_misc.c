@@ -23,6 +23,10 @@
 #include <unistd.h>
 #include <cutils/android_reboot.h>
 
+// clone libbootimg to /system/extras/ from
+// https://github.com/Tasssadar/libbootimg.git
+#include <libbootimg.h>
+
 #include "multirom_misc.h"
 #include "framebuffer.h"
 #include "input.h"
@@ -150,6 +154,59 @@ int multirom_has_kexec(void)
     }
 
     return has_kexec;
+}
+
+char *multirom_get_bootloader_cmdline(void)
+{
+    FILE *f;
+    char *c, *e, *l;
+    struct boot_img_hdr hdr;
+    struct fstab_part *boot;
+    char *cmdline;
+
+    f = fopen("/proc/cmdline", "r");
+    if(f == NULL)
+    {
+        ERROR("Cannot open /proc/cmdline");
+        return NULL;
+    }
+
+    cmdline = malloc(2048);
+
+    if(fgets(cmdline, 2048, f) == NULL)
+    {
+        ERROR("Cannot read /proc/cmdline");
+        free(cmdline);
+        cmdline = NULL;
+        goto exit;
+    }
+
+    size_t len = strlen(cmdline);
+    if(cmdline[len - 1] == '\n')
+        cmdline[len - 1] = '\0';
+
+    for(c = strchr(cmdline, '\n'); c != NULL; c = strchr(c + 1, '\n'))
+        *c = ' ';
+
+    // Remove the part from boot.img
+    boot = fstab_find_by_path(multirom_status.fstab, "/boot");
+    if(boot && libbootimg_load_header(&hdr, boot->device) >= 0)
+    {
+        hdr.cmdline[BOOT_ARGS_SIZE - 1] = 0;
+        l = (char *)hdr.cmdline;
+
+        if(l[0] != '\0' && (c = strstr(cmdline, l)) != NULL)
+        {
+            e = c + strlen(l);
+            if(e[0] == ' ')
+                ++e;
+            memmove(c, e, strlen(e) + 1); // plus NULL
+        }
+    }
+
+exit:
+    fclose(f);
+    return cmdline;
 }
 
 char *multirom_get_klog(void)
