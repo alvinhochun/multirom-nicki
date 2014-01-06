@@ -133,7 +133,7 @@ static __attribute__((noreturn)) void do_kexec(void)
     execl("/multirom/kexec", "/multirom/kexec", "-e", NULL);
 
     ERROR("kexec -e failed! (%d: %s)", errno, strerror(errno));
-    multirom_emergency_reboot_recovery();
+    multirom_emergency_reboot();
     while(1);
 }
 

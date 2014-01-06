@@ -21,7 +21,7 @@
 #include "multirom_rom.h"
 #include "multirom_status.h"
 
-void multirom_emergency_reboot_recovery(void) __attribute__((noreturn));
+void multirom_emergency_reboot(void) __attribute__((noreturn));
 int multirom_init_fb(int rotation);
 int multirom_has_kexec(void);
 char *multirom_get_bootloader_cmdline(void);

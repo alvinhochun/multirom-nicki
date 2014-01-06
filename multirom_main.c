@@ -37,7 +37,7 @@ enum exit_status multirom(void)
     multirom_status.fstab = fstab_auto_load();
     if(multirom_status.fstab == NULL)
     {
-        multirom_emergency_reboot_recovery();
+        multirom_emergency_reboot();
         while(1);
     }
 
@@ -50,7 +50,7 @@ enum exit_status multirom(void)
     if(parts_count == 0)
     {
         ERROR("No partitions mounted!");
-        multirom_emergency_reboot_recovery();
+        multirom_emergency_reboot();
         while(1);
     }
 
@@ -132,7 +132,7 @@ enum exit_status multirom_prepare_boot(struct multirom_rom *to_boot, struct mult
         break;
     }
     ERROR("Function not implemented!");
-    multirom_emergency_reboot_recovery();
+    multirom_emergency_reboot();
 }
 
 static char *replace_mountpath(const char *target, const char *old, const char *new)
@@ -304,7 +304,7 @@ enum exit_status multirom_prepare_android_img(struct multirom_partition *part, s
     else
         return EXIT_NORMALBOOT;
 fail:
-    multirom_emergency_reboot_recovery();
+    multirom_emergency_reboot();
 }
 
 enum exit_status multirom_prepare_kexec(const char *kernel_path, const char *ramdisk, const char *cmdline)
@@ -340,6 +340,6 @@ enum exit_status multirom_prepare_kexec(const char *kernel_path, const char *ram
     else
     {
         ERROR("Loading kexec failed");
-        multirom_emergency_reboot_recovery();
+        multirom_emergency_reboot();
     }
 }

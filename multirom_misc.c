@@ -33,7 +33,7 @@
 #include "log.h"
 #include "util.h"
 
-void multirom_emergency_reboot_recovery(void)
+void multirom_emergency_reboot(void)
 {
     if(multirom_init_fb(0) < 0)
     {
@@ -50,7 +50,7 @@ void multirom_emergency_reboot_recovery(void)
             "Log file copied to:\n"
             "sdcard/multirom_error.txt\n\n"
             "Press POWER button to\n"
-            "reboot to recovery."
+            "reboot."
         );
 
         fb_add_text(0, 7 * ISO_CHAR_HEIGHT * SIZE_NORMAL + ISO_CHAR_HEIGHT * SIZE_SMALL, GRAYISH, SIZE_SMALL, "Last lines from klog:");
@@ -81,7 +81,7 @@ void multirom_emergency_reboot_recovery(void)
         fb_close();
     }
 
-    android_reboot(ANDROID_RB_RESTART2, 0, "recovery");
+    android_reboot(ANDROID_RB_RESTART2, 0, NULL);
 
     while(1);
 }
