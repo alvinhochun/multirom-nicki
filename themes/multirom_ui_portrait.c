@@ -60,7 +60,7 @@ static void init_header(multirom_theme_data *t)
 
     int i, tab_x, tab_width;
 
-    static const char *header = "MultiROM for Xperia M/M Dual";
+    static const char *header = "MultiROM Xperia for M/M Dual";
     static const char *tabs[TAB_COUNT] = { "Internal", "microSD", "USB", "Misc" };
 
     fb_add_text(PADDING_S, PADDING_S, WHITE, SIZE_NORMAL, header);
@@ -193,14 +193,12 @@ static void tab_misc_init(multirom_theme_data *t, tab_data_misc *d, int color_sc
         y += MISCBTN_H + PADDING_L;
     }
 
-    fb_text *text = fb_add_text(0, fb_height - ISO_CHAR_HEIGHT * SIZE_SMALL, WHITE, SIZE_SMALL, "MultiROM v%d"VERSION_DEV_FIX" with trampoline v%d.",
+    fb_text *text = fb_add_text(0, fb_height - ISO_CHAR_HEIGHT * SIZE_SMALL, WHITE, SIZE_SMALL, "MultiROM Xperia v%d"VERSION_DEV_FIX" / trampoline v%d.",
                                VERSION_MULTIROM, multirom_get_trampoline_ver());
     list_add(text, &d->ui_elements);
 
-#ifdef MR_UNOFFICIAL_TEXT
-    text = fb_add_text(0, fb_height - ISO_CHAR_HEIGHT * SIZE_SMALL * 2, WHITE, SIZE_SMALL, "Unofficial "MR_UNOFFICIAL_TEXT" "__DATE__" "__TIME__);
+    text = fb_add_text(0, fb_height - ISO_CHAR_HEIGHT * SIZE_SMALL * 2, WHITE, SIZE_SMALL, "Compiled: "TARGET_DEVICE" "__DATE__" "__TIME__);
     list_add(text, &d->ui_elements);
-#endif
 
     char bat_text[16];
     sprintf(bat_text, "Battery: %d%%", multirom_get_battery());
