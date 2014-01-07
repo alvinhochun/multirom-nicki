@@ -60,7 +60,7 @@ static void clean_mnt_mounts(void)
 
             char buf[256];
             strncpy(buf, "/mnt/", strlen("/mnt/"));
-            strncpy(buf + strlen("/mnt"), dr->d_name, sizeof(buf) - strlen("/mnt"));
+            strncpy(buf + strlen("/mnt/"), dr->d_name, sizeof(buf) - strlen("/mnt/"));
             // FIXME: handle properly instead of truncating string
             buf[sizeof(buf) - 1] = '\0';
             umount(buf);
