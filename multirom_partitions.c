@@ -31,19 +31,14 @@
 
 #define BLOCKDEV_PREFIX "/dev/block/"
 
-void multirom_refresh_partitions(void)
+void multirom_scan_partitions(void)
 {
     INFO("Scanning for partitions...");
-    list_clear(&multirom_status.partitions, free_multirom_partition);
     if(multirom_status.external_sd != NULL)
     {
         free(multirom_status.external_sd);
         multirom_status.external_sd = NULL;
     }
-
-    INFO("Adding internal storage");
-    // No code returns NULL in multirom_mount_internal_storage()
-    list_add(multirom_mount_internal_storage(), &multirom_status.partitions);
 
     char *const cmd[] = { "/multirom/busybox", "blkid", NULL };
     char *res = run_get_stdout(cmd);
@@ -143,7 +138,7 @@ void multirom_refresh_partitions(void)
         if(multirom_mount_partition(part))
         {
             ERROR("Found and mounted partition %s, type=%s, UUID=%s", part->name, part->fstype, part->uuid);
-            list_add(part, &multirom_status.partitions);
+            list_add(part, &multirom_status.partitions_external);
             if((strcmp(part->name, "mmcblk1") == 0 || strcmp(part->name, "mmcblk1p1") == 0)
                 && multirom_status.external_sd == NULL)
                 multirom_status.external_sd = strdup(part->mount_path);
@@ -156,20 +151,35 @@ void multirom_refresh_partitions(void)
     } while((line = strtok(NULL, "\n")) != NULL);
 }
 
-struct multirom_partition *multirom_mount_internal_storage(void)
+void multirom_clear_partitions(void)
+{
+    // *** DO NOT UMOUNT INTERNAL STORAGE HERE ***
+    INFO("Unmounting and removing partitions...");
+    struct multirom_partition **part_ptr;
+    for(part_ptr = multirom_status.partitions_external; part_ptr != NULL && *part_ptr != NULL; part_ptr++)
+    {
+        umount((*part_ptr)->mount_path);
+    }
+    list_clear(&multirom_status.partitions_external, free_multirom_partition);
+}
+
+void multirom_mount_internal_storage(void)
 {
     // TODO: Support non-datamedia internal emmc
     struct fstab_part *fstab_part = fstab_find_by_path(multirom_status.fstab, "/data");
     if(fstab_part == NULL)
     {
         ERROR("Cannot get internal data partition.");
-        return multirom_mount_fake_internal_storage();
+        multirom_status.partition_internal = multirom_mount_fake_internal_storage();
+        return;
     }
+    wait_for_file(fstab_part->device, 5);
     mkdir("/mnt/data", 0755);
     if(mount(fstab_part->device, "/mnt/data", fstab_part->type, fstab_part->mountflags, fstab_part->options) != 0)
     {
         ERROR("Cannot mount internal data partition.");
-        return multirom_mount_fake_internal_storage();
+        multirom_status.partition_internal = multirom_mount_fake_internal_storage();
+        return;
     }
     struct multirom_partition *part = mzalloc(sizeof(struct multirom_partition));
     part->name = strdup("internal");
@@ -181,17 +191,17 @@ struct multirom_partition *multirom_mount_internal_storage(void)
     if(mount("/mnt/data/media/0", "/mnt/internal", "", MS_BIND, "") == 0)
     {
         ERROR("/data/media/0 is mounted as internal storage.");
-        return part;
+        multirom_status.partition_internal = part;
     }
     else if(mount("/mnt/data/media", "/mnt/internal", "", MS_BIND, "") == 0)
     {
         ERROR("/data/media is mounted as internal storage.");
-        return part;
+        multirom_status.partition_internal = part;
     }
     else
     {
         free_multirom_partition(part);
-        return multirom_mount_fake_internal_storage();
+        multirom_status.partition_internal = multirom_mount_fake_internal_storage();
     }
 }
 

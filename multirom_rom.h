@@ -102,6 +102,7 @@ struct multirom_rom
 
 void free_multirom_rom(struct multirom_rom *p);
 
+void multirom_scan_all_roms();
 struct multirom_rom **multirom_scan_roms(struct multirom_partition *partition);
 struct multirom_rom *multirom_parse_rom_entry(const char *multirom_basepath, const char *rom_name, struct multirom_partition *partition);
 struct multirom_rom *multirom_create_internal_entry(const char *multirom_basepath, struct multirom_partition *partition);

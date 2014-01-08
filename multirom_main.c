@@ -41,26 +41,14 @@ enum exit_status multirom(void)
         while(1);
     }
 
+    multirom_mount_internal_storage();
+
     // TODO: load and save preferences
     //multirom_load_default_pref();
     multirom_status.pref.brightness = 40;
 
-    multirom_refresh_partitions();
-    int parts_count = list_item_count(multirom_status.partitions);
-    if(parts_count == 0)
-    {
-        ERROR("No partitions mounted!");
-        multirom_emergency_reboot();
-        while(1);
-    }
-
-    int i;
-    for(i = 0; i < parts_count; i++)
-    {
-        struct multirom_rom **roms = multirom_scan_roms(multirom_status.partitions[i]);
-        list_add_from_list(roms, &multirom_status.roms);
-        free(roms);
-    }
+    multirom_scan_partitions();
+    multirom_scan_all_roms();
 
     struct multirom_rom *to_boot;
     struct multirom_romdata *boot_profile;
@@ -311,7 +299,7 @@ enum exit_status multirom_prepare_kexec(const char *kernel_path, const char *ram
 {
     char *arg_ramdisk = malloc(strlen("--initrd=") + strlen(ramdisk) + 1);
     char *arg_cmdline = malloc(strlen("--command-line=") + strlen(cmdline) + 1);
-    char *cmd[] = {
+    const char *cmd[] = {
         "/multirom/kexec",               // 0
         "--load-hardboot",               // 1
         kernel_path,                     // 2 - path to zImage
@@ -329,11 +317,11 @@ enum exit_status multirom_prepare_kexec(const char *kernel_path, const char *ram
     strcat(arg_cmdline, cmdline);
 
     ERROR("Loading kexec with args:");
-    char **ptr;
+    const char **ptr;
     for(ptr = cmd; *ptr != NULL; ptr++)
         ERROR("%s", *ptr);
 
-    if(run_cmd(cmd) == 0)
+    if(run_cmd((char *const *)cmd) == 0)
     {
         return EXIT_KEXEC;
     }

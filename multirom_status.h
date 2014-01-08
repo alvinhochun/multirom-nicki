@@ -30,7 +30,8 @@
 struct multirom_status
 {
     struct fstab *fstab;
-    struct multirom_partition **partitions; // A list of partitions
+    struct multirom_partition **partitions_external; // A list of partitions
+    struct multirom_partition *partition_internal; // Internal partition
     struct multirom_rom **roms; // A list of ROMs
     char *external_sd; // Path to external sd mount point or NULL
     struct multirom_pref pref;

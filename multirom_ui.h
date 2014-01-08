@@ -87,6 +87,7 @@ void multirom_ui_tab_rom_set_empty(tab_data_roms *data, int empty, int tab_type)
 void *multirom_ui_tab_misc_init(void);
 void multirom_ui_tab_misc_destroy(void *data);
 void multirom_ui_tab_misc_copy_log(int action);
+void multirom_ui_tab_misc_rescan(int action);
 void multirom_ui_tab_misc_change_clr(int clr);
 
 void multirom_ui_reboot_btn(int action);

@@ -43,7 +43,7 @@
 static struct multirom_rom *selected_rom = NULL;
 static struct multirom_romdata *selected_profile = NULL;
 static volatile int exit_ui_code = -1;
-static fb_msgbox *active_msgbox = NULL;
+static volatile fb_msgbox *active_msgbox = NULL;
 static volatile int loop_act = 0;
 static multirom_themes_info *themes_info = NULL;
 static multirom_theme *cur_theme = NULL;
@@ -54,6 +54,7 @@ uint32_t CLR_PRIMARY = LBLUE;
 uint32_t CLR_SECONDARY = LBLUE2;
 
 //#define LOOP_UPDATE_USB 0x01
+#define LOOP_EXT_RESCAN 0x01
 #define LOOP_START_PONG 0x02
 #define LOOP_CHANGE_CLR 0x04
 
@@ -124,6 +125,38 @@ int multirom_ui(struct multirom_rom **to_boot, struct multirom_romdata **boot_pr
                 multirom_ui_tab_rom_update_usb(themes_info->data->tab_data);
             loop_act &= ~(LOOP_UPDATE_USB);
         }*/
+
+        if(loop_act & LOOP_EXT_RESCAN)
+        {
+            list_clear(&multirom_status.roms, free_multirom_rom);
+            multirom_clear_partitions();
+
+            active_msgbox = fb_create_msgbox(416*DPI_MUL, 360*DPI_MUL, CLR_PRIMARY);
+            fb_msgbox_add_text(-1, 30*DPI_MUL, SIZE_BIG, "Storage Devices");
+            fb_msgbox_add_text(-1, 80*DPI_MUL, SIZE_BIG, "Unmounted");
+            fb_msgbox_add_text(-1, 140*DPI_MUL, SIZE_NORMAL, "You can now remove and");
+            fb_msgbox_add_text(-1, 175*DPI_MUL, SIZE_NORMAL, "replace the SD card or");
+            fb_msgbox_add_text(-1, 210*DPI_MUL, SIZE_NORMAL, "USB storage.");
+            fb_msgbox_add_text(-1, active_msgbox->h-60*DPI_MUL, SIZE_NORMAL, "Touch to rescan ROMs");
+
+            fb_draw();
+            fb_freeze(1);
+            set_touch_handlers_mode(HANDLERS_ALL);
+
+            int msgbox_visible = 1;
+            do
+            {
+                pthread_mutex_unlock(&exit_code_mutex);
+                usleep(100000);
+                pthread_mutex_lock(&exit_code_mutex);
+                msgbox_visible = active_msgbox != NULL;
+            } while(msgbox_visible);
+
+            multirom_scan_partitions();
+            multirom_scan_all_roms();
+
+            loop_act &= ~(LOOP_EXT_RESCAN);
+        }
 
         if(loop_act & LOOP_START_PONG)
         {
@@ -597,6 +630,35 @@ void multirom_ui_tab_rom_boot_btn(int action)
         return;
     }
 #if 0
+    // Partitions are unmounted when scanned, so...
+    // TODO: check the partition more strictly
+    if(rom->partition->type != PART_INTERNAL && !multirom_mount_partition(rom->partition))
+    {
+        active_msgbox = fb_create_msgbox(416*DPI_MUL, 360*DPI_MUL, DRED);
+        fb_msgbox_add_text(-1, 30*DPI_MUL, SIZE_BIG, "Error");
+        switch(rom->partition->type)
+        {
+        case PART_EXTERNAL_SD:
+            fb_msgbox_add_text(-1, 90*DPI_MUL, SIZE_NORMAL, "The SD card partition");
+            break;
+        case PART_EXTERNAL_USBDISK:
+            fb_msgbox_add_text(-1, 90*DPI_MUL, SIZE_NORMAL, "The USB storage partition");
+            break;
+        default:
+            fb_msgbox_add_text(-1, 90*DPI_MUL, SIZE_NORMAL, "The partition");
+            break;
+        }
+        fb_msgbox_add_text(-1, 125*DPI_MUL, SIZE_NORMAL, "cannot be mounted!");
+        fb_msgbox_add_text(-1, 180*DPI_MUL, SIZE_NORMAL, "The ROM list will be");
+        fb_msgbox_add_text(-1, 215*DPI_MUL, SIZE_NORMAL, "refreshed automatically.");
+        fb_msgbox_add_text(-1, active_msgbox->h-60*DPI_MUL, SIZE_NORMAL, "Touch to close");
+
+        fb_draw();
+        fb_freeze(1);
+        set_touch_handlers_mode(HANDLERS_ALL);
+        return;
+    }
+//#if 0
     if((m & MASK_KEXEC) && strchr(rom->name, ' '))
     {
         active_msgbox = fb_create_msgbox(416*DPI_MUL, 360*DPI_MUL, DRED);
@@ -727,9 +789,16 @@ void multirom_ui_tab_misc_copy_log(int action)
     fb_msgbox_add_text(-1, 50*DPI_MUL, SIZE_NORMAL, (char*)text[res+1]);
     if(res == 0)
         fb_msgbox_add_text(-1, -1, SIZE_NORMAL, "sdcard/multirom_error.txt");
-    fb_msgbox_add_text(-1, active_msgbox->h-60*DPI_MUL, SIZE_NORMAL, "Touch anywhere to close");
+    fb_msgbox_add_text(-1, active_msgbox->h-60*DPI_MUL, SIZE_NORMAL, "Touch to close");
 
     fb_draw();
     fb_freeze(1);
     set_touch_handlers_mode(HANDLERS_ALL);
+}
+
+void multirom_ui_tab_misc_rescan(int action)
+{
+    pthread_mutex_lock(&exit_code_mutex);
+    loop_act |= LOOP_EXT_RESCAN;
+    pthread_mutex_unlock(&exit_code_mutex);
 }

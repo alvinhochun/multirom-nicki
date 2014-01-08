@@ -43,8 +43,9 @@ struct multirom_partition
 
 void free_multirom_partition(struct multirom_partition *p);
 
-void multirom_refresh_partitions(void);
-struct multirom_partition *multirom_mount_internal_storage(void);
+void multirom_scan_partitions(void);
+void multirom_clear_partitions(void);
+void multirom_mount_internal_storage(void);
 struct multirom_partition *multirom_mount_fake_internal_storage(void);
 int multirom_mount_partition(struct multirom_partition *part);
 

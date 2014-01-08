@@ -26,8 +26,28 @@
 #include <errno.h>
 
 #include "multirom_rom.h"
+#include "multirom_status.h"
 #include "util.h"
 #include "log.h"
+
+/*
+ * Scans for ROMs in all partitions.
+ */
+void multirom_scan_all_roms()
+{
+    struct multirom_rom **roms = multirom_scan_roms(multirom_status.partition_internal);
+    list_add_from_list(roms, &multirom_status.roms);
+    free(roms);
+
+    struct multirom_partition **part_ptr;
+
+    for(part_ptr = multirom_status.partitions_external; part_ptr != NULL && *part_ptr != NULL; part_ptr++)
+    {
+        roms = multirom_scan_roms(*part_ptr);
+        list_add_from_list(roms, &multirom_status.roms);
+        free(roms);
+    }
+}
 
 /*
  * Scans for ROMs.
