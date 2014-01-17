@@ -226,6 +226,23 @@ char *multirom_get_klog(void)
     return buff;
 }
 
+static int multirom_save_log(const char *path, const char *log, size_t log_size)
+{
+    FILE *f = fopen(path, "w");
+    if(f)
+    {
+        fwrite(log, 1, log_size, f);
+        fclose(f);
+        chmod(path, 0777);
+        return 0;
+    }
+    else
+    {
+        ERROR("Failed to open %s!\n", path);
+        return -1;
+    }
+}
+
 int multirom_copy_log(char *klog)
 {
     int res = 0;
@@ -236,25 +253,12 @@ int multirom_copy_log(char *klog)
 
     if(klog)
     {
-        const char *dir;
+        multirom_save_log("/mnt/internal/multirom_error.txt", klog, strlen(klog));
         if(multirom_status.external_sd != NULL)
-            dir = multirom_status.external_sd;
-        else
-            dir = "/mnt/internal";
-
-        char path[256];
-        sprintf(path, "%s/multirom_error.txt", dir);
-        FILE *f = fopen(path, "w");
-        if(f)
         {
-            fwrite(klog, 1, strlen(klog), f);
-            fclose(f);
-            chmod(path, 0777);
-        }
-        else
-        {
-            ERROR("Failed to open %s!\n", path);
-            res = -1;
+            char path[256];
+            sprintf(path, "%s/multirom_error.txt", multirom_status.external_sd);
+            multirom_save_log(path, klog, strlen(klog));
         }
     }
     else

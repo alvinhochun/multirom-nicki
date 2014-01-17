@@ -33,12 +33,10 @@
 
 void multirom_scan_partitions(void)
 {
+    if(multirom_status.partitions_external != NULL)
+        return;
+
     INFO("Scanning for partitions...");
-    if(multirom_status.external_sd != NULL)
-    {
-        free(multirom_status.external_sd);
-        multirom_status.external_sd = NULL;
-    }
 
     char *const cmd[] = { "/multirom/busybox", "blkid", NULL };
     char *res = run_get_stdout(cmd);
@@ -161,6 +159,12 @@ void multirom_clear_partitions(void)
         umount((*part_ptr)->mount_path);
     }
     list_clear(&multirom_status.partitions_external, free_multirom_partition);
+
+    if(multirom_status.external_sd != NULL)
+    {
+        free(multirom_status.external_sd);
+        multirom_status.external_sd = NULL;
+    }
 }
 
 void multirom_mount_internal_storage(void)
