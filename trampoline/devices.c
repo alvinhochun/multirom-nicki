@@ -83,7 +83,7 @@ static void *uevent_thread_work(void *cookie)
         ufd.revents = 0;
         nr = poll(&ufd, 1, 0);
 
-        if (nr > 0 && ufd.revents == POLLIN)
+        if (nr > 0 && (ufd.revents & POLLIN))
             handle_device_fd();
 
         usleep(100000);
@@ -177,6 +177,9 @@ void devices_init(void)
 
     // /dev/null
     init_single_path("/sys/devices/virtual/mem/null");
+
+    // /dev/fuse
+    init_single_path("/sys/devices/virtual/misc/fuse");
 
     run_event_thread = 1;
     pthread_create(&uevent_thread, NULL, uevent_thread_work, NULL);

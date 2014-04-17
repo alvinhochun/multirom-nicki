@@ -21,8 +21,8 @@
 #include <pthread.h>
 #include <stdio.h>
 
-#include "util.h"
 #include "fstab.h"
+#include "containers.h"
 
 enum
 {
@@ -58,6 +58,13 @@ enum
     EXIT_KEXEC               = 0x20,
 
     EXIT_REBOOT_MASK         = (EXIT_REBOOT | EXIT_REBOOT_RECOVERY | EXIT_REBOOT_BOOTLOADER | EXIT_SHUTDOWN),
+};
+
+enum
+{
+    AUTOBOOT_NAME            = 0x00,
+    AUTOBOOT_LAST            = 0x01,
+    AUTOBOOT_FORCE_CURRENT   = 0x02
 };
 
 struct usb_partition
@@ -103,7 +110,7 @@ struct multirom_status
     struct fstab *fstab;
 };
 
-int multirom(void);
+int multirom(const char *rom_to_boot);
 int multirom_find_base_dir(void);
 void multirom_emergency_reboot(void);
 int multirom_default_status(struct multirom_status *s);
@@ -116,6 +123,7 @@ int multirom_load_status(struct multirom_status *s);
 void multirom_import_internal(void);
 void multirom_dump_status(struct multirom_status *s);
 int multirom_save_status(struct multirom_status *s);
+void multirom_fixup_rom_name(struct multirom_rom *rom, char *name, const char *def);
 int multirom_prepare_for_boot(struct multirom_status *s, struct multirom_rom *to_boot);
 void multirom_free_status(struct multirom_status *s);
 void multirom_free_rom(void *rom);
